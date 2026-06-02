@@ -1,0 +1,3 @@
+Program testproj {
+    Print("Hello from Y#!");
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ys-lang",
+  "version": "8.0.0",
+  "description": "Y# programming language compiler - V8 release with Print polymorphism, variables, loops, and conditionals",
+  "bin": {
+    "ys": "bin/oys.exe",
+    "yo": "bin/yo.exe"
+  },
+  "scripts": {
+    "postinstall": "node -e \"try{require('fs').chmodSync('bin/oys.exe',0o755)}catch(e){}\"",
+    "test": "oys.exe build examples/hello.ys && output.exe"
+  },
+  "keywords": ["ys", "ys-lang", "programming-language", "compiler", "oyster"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oysterlang/ys"
+  },
+  "os": ["win32"],
+  "cpu": ["x64"]
+}

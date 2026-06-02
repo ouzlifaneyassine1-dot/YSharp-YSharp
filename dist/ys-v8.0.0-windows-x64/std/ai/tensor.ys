@@ -1,0 +1,49 @@
+// Y# AI & Tensor Library — Neural networks, tensors, automatic differentiation
+
+// --- Tensor creation ---
+Function TensorCreate(shape: List) -> Tensor { }
+Function TensorZeros(shape: List) -> Tensor { }
+Function TensorOnes(shape: List) -> Tensor { }
+Function TensorEye(size: Int) -> Tensor { }
+Function TensorRandom(shape: List, mean, std) -> Tensor { }
+Function TensorFromArray(data: List, shape: List) -> Tensor { }
+
+// --- Tensor ops ---
+Function TensorFill(tensor, value) { }
+Function TensorCopy(tensor) -> Tensor { }
+Function TensorReshape(tensor, newShape: List) -> Tensor { }
+Function TensorSlice(tensor, start: List, end: List) -> Tensor { }
+Function TensorTranspose(tensor) -> Tensor { }
+Function TensorShape(tensor) -> List { }
+
+// --- Math ops ---
+Function MatMul(a: Tensor, b: Tensor) -> Tensor { }
+Function TensorAdd(a: Tensor, b: Tensor) -> Tensor { }
+Function TensorSub(a: Tensor, b: Tensor) -> Tensor { }
+Function TensorMul(a: Tensor, b: Tensor) -> Tensor { }
+Function TensorDiv(a: Tensor, b: Tensor) -> Tensor { }
+Function TensorNeg(tensor) -> Tensor { }
+
+// --- Activations ---
+Function Relu(tensor: Tensor) -> Tensor { }
+Function Sigmoid(tensor: Tensor) -> Tensor { }
+Function TanhAct(tensor: Tensor) -> Tensor { }
+Function Softmax(tensor: Tensor) -> Tensor { }
+Function LeakyRelu(tensor: Tensor, alpha) -> Tensor { }
+
+// --- Neural network layers ---
+Function Dense(input: Tensor, weights: Tensor, bias: Tensor) -> Tensor { }
+Function Conv2d(input: Tensor, kernel: Tensor, stride: Int, padding: Int) -> Tensor { }
+Function MaxPool(tensor: Tensor, size: Int) -> Tensor { }
+Function AvgPool(tensor: Tensor, size: Int) -> Tensor { }
+Function Dropout(tensor: Tensor, rate) -> Tensor { }
+Function BatchNorm(tensor: Tensor, gamma, beta, mean, var) -> Tensor { }
+
+// --- Loss functions ---
+Function MSE(predicted: Tensor, target: Tensor) -> Float { }
+Function CrossEntropy(predicted: Tensor, target: Tensor) -> Float { }
+Function BinaryCrossEntropy(predicted: Tensor, target: Tensor) -> Float { }
+
+// --- Optimization ---
+Function SGD(params: List, gradients: List, lr) { }
+Function Adam(params: List, grads: List, m: List, v: List, t: Int, lr, beta1, beta2) { }

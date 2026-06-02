@@ -1,0 +1,41 @@
+// Y# Physics Module — 3D physics utilities
+
+// --- Vector3 helpers ---
+Function Vec3(x, y, z) -> Vector3 { }
+Function Vec3Add(a, b) -> Vector3 { }
+Function Vec3Sub(a, b) -> Vector3 { }
+Function Vec3Scale(v, s) -> Vector3 { }
+Function Vec3Dot(a, b) -> Float { }
+Function Vec3Cross(a, b) -> Vector3 { }
+Function Vec3Length(v) -> Float { }
+Function Vec3Normalize(v) -> Vector3 { }
+Function Vec3Distance(a, b) -> Float { }
+Function Vec3Lerp(a, b, t) -> Vector3 { }
+
+// --- Quaternion helpers ---
+Function QuatIdentity() -> Quaternion { }
+Function QuatAxisAngle(axis: Vector3, angle: Float) -> Quaternion { }
+Function QuatMultiply(a, b) -> Quaternion { }
+Function QuatRotate(q, v: Vector3) -> Vector3 { }
+Function QuatSlerp(a, b, t) -> Quaternion { }
+
+// --- Matrix helpers ---
+Function Mat4Identity() -> Matrix4 { }
+Function Mat4Translate(x, y, z) -> Matrix4 { }
+Function Mat4RotateX(angle: Float) -> Matrix4 { }
+Function Mat4RotateY(angle: Float) -> Matrix4 { }
+Function Mat4RotateZ(angle: Float) -> Matrix4 { }
+Function Mat4Scale(x, y, z) -> Matrix4 { }
+Function Mat4Perspective(fov: Float, aspect: Float, near: Float, far: Float) -> Matrix4 { }
+Function Mat4LookAt(eye: Vector3, target: Vector3, up: Vector3) -> Matrix4 { }
+Function Mat4Mul(a, b) -> Matrix4 { }
+Function Mat4Transform(m, v: Vector3) -> Vector3 { }
+
+// --- Collision detection ---
+Function SphereSphere(a: Vector3, ra, b: Vector3, rb) -> Bool { }
+Function RaySphere(origin: Vector3, dir: Vector3, center: Vector3, radius) -> Float { }
+Function RayAABB(origin: Vector3, dir: Vector3, min: Vector3, max: Vector3) -> Float { }
+Function AABBOverlap(aMin: Vector3, aMax: Vector3, bMin: Vector3, bMax: Vector3) -> Bool { }
+
+Struct Quaternion { x: Float, y: Float, z: Float, w: Float }
+Struct Matrix4 { m: List }

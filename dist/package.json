@@ -1,0 +1,16 @@
+{
+  "name": "ys-lang",
+  "version": "8.0.0",
+  "description": "Y# programming language compiler and package manager",
+  "keywords": ["ys", "ys-lang", "oyster", "programming-language", "compiler"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oysterlang/ys"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "os": ["win32", "darwin", "linux"],
+  "cpu": ["x64"]
+}

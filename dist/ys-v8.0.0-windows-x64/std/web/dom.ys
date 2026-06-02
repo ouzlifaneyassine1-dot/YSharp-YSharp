@@ -1,0 +1,35 @@
+// Y# Web/DOM Library — browser-style UI programming
+
+// --- Element queries ---
+Function QuerySelector(selector: String) -> Element { }
+Function QuerySelectorAll(selector: String) -> List { }
+Function CreateElement(tag: String) -> Element { }
+
+// --- Element manipulation ---
+Function ElementText(element, text: String) { }
+Function ElementHtml(element, html: String) { }
+Function ElementAppend(parent, child) { }
+Function ElementRemove(element) { }
+Function ElementStyle(element, property: String, value: String) { }
+Function ElementAttr(element, name: String, value: String) { }
+Function ElementClass(element, className: String) { }
+Function ElementAddClass(element, className: String) { }
+Function ElementRemoveClass(element, className: String) { }
+
+// --- Events ---
+Function ElementOn(element, event: String, handler: Function) { }
+Function ElementOff(element, event: String) { }
+
+// --- State management ---
+Function StateCreate(initial) -> State { }
+Function StateGet(state) { }
+Function StateSet(state, value) { }
+Function StateWatch(state, handler: Function) { }
+
+// --- Rendering ---
+Function Render(template: String, target: String) { }
+Function RenderComponent(component: View) { }
+
+// --- Routing ---
+Function Route(path: String, component: View) { }
+Function Navigate(path: String) { }

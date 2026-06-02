@@ -1,0 +1,13 @@
+Program TypeDemo {
+    var x = 42          // inferred Int
+    var y = 3.14        // inferred Float
+    var name = "Y#"     // inferred String
+    var flag = true     // inferred Bool
+    
+    PrintLine(x)
+    PrintLine(y)
+    PrintLine(name)
+    
+    x: Int = 100        // explicit type (optimized, unboxed)
+    PrintLine(x)
+}

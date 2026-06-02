@@ -1,0 +1,16 @@
+Program ChatServer {
+    Actor Room {
+        State<List<String>> messages = []
+        
+        On(Join(session)) {
+            PrintLine("User joined")
+        }
+        
+        On(Message(sender, text)) {
+            messages.Add(sender + ": " + text)
+            Broadcast(messages.Last())
+        }
+    }
+    
+    Serve(port: 8080, handler: Room)
+}

@@ -1,0 +1,27 @@
+Program EcsDemo {
+    Component Position { x: Float, y: Float }
+    Component Velocity { dx: Float, dy: Float }
+    
+    Entity Player {
+        Position(x: 0, y: 0)
+        Velocity(dx: 1, dy: 0)
+    }
+    
+    Entity Enemy {
+        Position(x: 100, y: 100)
+        Velocity(dx: -1, dy: 0)
+    }
+    
+    System Physics(dt) {
+        ForEach(Entity with Position, Velocity) { e =>
+            e.Position.x += e.Velocity.dx * dt
+            e.Position.y += e.Velocity.dy * dt
+        }
+    }
+    
+    System Render() {
+        ForEach(Entity with Position) { e =>
+            DrawCircle(e.Position.x, e.Position.y, radius: 10)
+        }
+    }
+}

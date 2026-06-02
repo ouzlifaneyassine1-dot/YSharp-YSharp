@@ -1,0 +1,21 @@
+// Y# Standard I/O Library
+// Print values, read input, work with files
+
+Function Print(value) { }
+Function PrintLine(value) { }
+
+Function ReadLine() -> String { }
+Function ReadInt() -> Int { }
+Function ReadFloat() -> Float { }
+
+Function FileOpen(path: String, mode: String) -> FileHandle { }
+Function FileRead(handle: FileHandle) -> String { }
+Function FileWrite(handle: FileHandle, data: String) { }
+Function FileClose(handle: FileHandle) { }
+Function FileExists(path: String) -> Bool { }
+Function FileDelete(path: String) { }
+
+Function Format(template: String, args: List) -> String { }
+Function ToString(value) -> String { }
+Function ToInt(value) -> Int { }
+Function ToFloat(value) -> Float { }

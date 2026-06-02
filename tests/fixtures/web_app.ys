@@ -1,0 +1,23 @@
+Program TodoApp {
+    State<List<String>> items = ["Learn Y#", "Build apps"]
+    State<String> newTask = ""
+    
+    View {
+        Div({
+            Text("Y# Todo App")
+            Input(placeholder: "New task", bind: newTask)
+            Button("Add") {
+                If (newTask != "") {
+                    items.Add(newTask)
+                    newTask = ""
+                }
+            }
+            ForEach(items) { item =>
+                Div({
+                    Checkbox()
+                    Text(item)
+                })
+            }
+        })
+    }
+}

@@ -1,0 +1,26 @@
+Program GameDemo {
+    Entity Player {
+        Transform(x: 0, y: 0, z: 0)
+        RigidBody(mass: 1.0)
+        Mesh("player.glb")
+    }
+    
+    Entity Camera {
+        Transform(x: 0, y: 5, z: -10)
+        Camera(fov: 60)
+    }
+    
+    System Movement(dt) {
+        If (Input.KeyDown("W")) {
+            Player.position.z -= 5 * dt
+        }
+        If (Input.KeyDown("S")) {
+            Player.position.z += 5 * dt
+        }
+    }
+    
+    Compute(PostProcess) {
+        Trace(ray from Camera.position, direction: Camera.forward)
+        Shade(material: "standard", light: sunLight)
+    }
+}

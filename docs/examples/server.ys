@@ -1,0 +1,39 @@
+// Y# HTTP Server Demo
+Import "std/core/io"
+Import "std/core/collections"
+Import "std/server/http"
+
+Function Main() {
+    PrintLine("=== Y# HTTP Server ===")
+    
+    Serve(8080, Function(req: HttpRequest) -> Response {
+        PrintLine("→ " + req.method + " " + req.path)
+        
+        // Router
+        If req.method == "GET" {
+            If req.path == "/" {
+                Return Response { status: 200, body: "<h1>Y# Server</h1><p>Hello from Y#!</p>", headers: MapCreate() }
+            }
+            If req.path == "/api/health" {
+                Return Response { status: 200, body: "{ \"status\": \"ok\", \"version\": \"1.0\" }", headers: MapCreate() }
+            }
+            If StringStartsWith(req.path, "/api/data") {
+                // Query params parsing
+                Var data = MapCreate()
+                MapSet(data, "message", "Hello from Y# API!")
+                MapSet(data, "timestamp", ToString(45)) // simulated time
+                Return Response { status: 200, body: ToString(data), headers: MapCreate() }
+            }
+        }
+        
+        If req.method == "POST" {
+            If req.path == "/api/data" {
+                PrintLine("  Body: " + req.body)
+                Return Response { status: 201, body: "{ \"created\": true }", headers: MapCreate() }
+            }
+        }
+        
+        // 404
+        Return Response { status: 404, body: "{ \"error\": \"Not Found\" }", headers: MapCreate() }
+    })
+}

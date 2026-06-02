@@ -1,0 +1,67 @@
+// Y# AI Training Demo — neural network from scratch
+Import "std/core/io"
+Import "std/core/math"
+Import "std/ai/tensor"
+Import "std/ai/nn"
+
+Function Main() {
+    PrintLine("=== Y# Neural Network Training ===")
+    
+    // Create a simple MNIST-like model
+    Var model = Sequential()
+    ModelAdd(model, DenseLayer(128, "relu"))
+    ModelAdd(model, DropoutLayer(0.2))
+    ModelAdd(model, DenseLayer(64, "relu"))
+    ModelAdd(model, DenseLayer(10, "softmax"))
+    
+    ModelSummary(model)
+    
+    // Generate synthetic training data (1000 samples, 784 features)
+    Var numSamples = 1000
+    Var inputSize = 784
+    Var outputSize = 10
+    
+    Var inputs = TensorRandom([numSamples, inputSize], 0, 1)
+    Var labels = TensorZeros([numSamples, outputSize])
+    
+    // One-hot encoded labels
+    For i = 0 To numSamples - 1 {
+        Var label = RandomInt(0, 9)
+        TensorFill(TensorSlice(labels, [i, label], [i+1, label+1]), 1)
+    }
+    
+    // Training loop
+    Var epochs = 10
+    Var learningRate = 0.001
+    Var batchSize = 32
+    
+    For epoch = 0 To epochs - 1 {
+        Var totalLoss = 0
+        
+        For batch = 0 To (numSamples / batchSize) - 1 {
+            Var start = batch * batchSize
+            Var end = start + batchSize
+            
+            Var batchInputs = TensorSlice(inputs, [start, 0], [end, inputSize])
+            Var batchLabels = TensorSlice(labels, [start, 0], [end, outputSize])
+            
+            // Forward pass (simplified)
+            Var predictions = ModelForward(model, batchInputs)
+            
+            // Compute loss
+            Var loss = CrossEntropy(predictions, batchLabels)
+            totalLoss = totalLoss + loss
+            
+            // Backward pass + optimization (handled by ModelTrain)
+            ModelTrain(model, [batchInputs], [batchLabels], 1, learningRate)
+        }
+        
+        Var avgLoss = totalLoss / (numSamples / batchSize)
+        PrintLine("Epoch " + ToString(epoch + 1) + "/" + ToString(epochs) + 
+                  " — Loss: " + ToString(avgLoss))
+    }
+    
+    // Save trained model
+    ModelSave(model, "trained_model.ys")
+    PrintLine("Training complete! Model saved.")
+}

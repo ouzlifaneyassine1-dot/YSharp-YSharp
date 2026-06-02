@@ -1,0 +1,96 @@
+// Y# Physics Simulation Demo
+Import "std/core/io"
+Import "std/core/math"
+Import "std/game/physics"
+
+Function Main() {
+    PrintLine("=== Y# Physics Simulation ===")
+    
+    // Define a simple physics world
+    Var gravity = Vec3(0, -9.81, 0)
+    Var objects = ListCreate()
+    
+    // Spawn objects
+    For i = 0 To 99 {
+        Var pos = Vec3(RandomRange(-10, 10), RandomRange(10, 50), RandomRange(-10, 10))
+        Var vel = Vec3(RandomRange(-5, 5), 0, RandomRange(-5, 5))
+        Var obj = MapCreate()
+        MapSet(obj, "position", pos)
+        MapSet(obj, "velocity", vel)
+        MapSet(obj, "mass", RandomRange(0.5, 5))
+        MapSet(obj, "radius", RandomRange(0.2, 1))
+        ListAdd(objects, obj)
+    }
+    
+    // Physics simulation loop
+    Var dt = 1.0 / 60.0
+    Var numSteps = 100
+    
+    For step = 0 To numSteps - 1 {
+        // Update velocities and positions
+        For i = 0 To ListLength(objects) - 1 {
+            Var obj = ListGet(objects, i)
+            Var vel = MapGet(obj, "velocity")
+            Var pos = MapGet(obj, "position")
+            Var mass = MapGet(obj, "mass")
+            
+            // Apply gravity
+            vel = Vec3Add(vel, Vec3Scale(gravity, dt))
+            
+            // Update position
+            pos = Vec3Add(pos, Vec3Scale(vel, dt))
+            
+            // Ground collision
+            If pos.y - MapGet(obj, "radius") < 0 {
+                pos.y = MapGet(obj, "radius")
+                vel.y = -vel.y * 0.5 // bounce with energy loss
+            }
+            
+            MapSet(obj, "velocity", vel)
+            MapSet(obj, "position", pos)
+        }
+        
+        // Collision detection (brute force)
+        For i = 0 To ListLength(objects) - 1 {
+            For j = i + 1 To ListLength(objects) - 1 {
+                Var a = ListGet(objects, i)
+                Var b = ListGet(objects, j)
+                Var pa = MapGet(a, "position")
+                Var pb = MapGet(b, "position")
+                Var ra = MapGet(a, "radius")
+                Var rb = MapGet(b, "radius")
+                
+                If SphereSphere(pa, ra, pb, rb) {
+                    // Simple elastic collision response
+                    Var normal = Vec3Normalize(Vec3Sub(pb, pa))
+                    Var va = MapGet(a, "velocity")
+                    Var vb = MapGet(b, "velocity")
+                    Var ma = MapGet(a, "mass")
+                    Var mb = MapGet(b, "mass")
+                    
+                    Var relVel = Vec3Sub(va, vb)
+                    Var impulse = 2 * Vec3Dot(relVel, normal) / (ma + mb)
+                    
+                    MapSet(a, "velocity", Vec3Sub(va, Vec3Scale(normal, impulse * mb)))
+                    MapSet(b, "velocity", Vec3Add(vb, Vec3Scale(normal, impulse * ma)))
+                    
+                    // Separate overlapping objects
+                    Var overlap = (ra + rb) - Vec3Distance(pa, pb)
+                    Var sep = Vec3Scale(normal, overlap / 2)
+                    MapSet(a, "position", Vec3Sub(pa, sep))
+                    MapSet(b, "position", Vec3Add(pb, sep))
+                }
+            }
+        }
+        
+        // Print status every 10 steps
+        If step % 10 == 0 {
+            Var obj = ListGet(objects, 0)
+            Var pos = MapGet(obj, "position")
+            PrintLine("Step " + ToString(step) + " — Ball 0 at (" + 
+                      ToString(pos.x) + ", " + ToString(pos.y) + ", " + ToString(pos.z) + ")")
+        }
+    }
+    
+    PrintLine("Physics simulation complete!")
+}

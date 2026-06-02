@@ -1,0 +1,20 @@
+Program ActorDemo {
+    Actor Counter {
+        State<Int> count = 0
+        
+        On(Increment) {
+            count += 1
+            PrintLine("Count: " + count)
+        }
+        
+        On(Reset) {
+            count = 0
+            PrintLine("Reset")
+        }
+    }
+    
+    // Usage
+    Counter.Send(Increment)
+    Counter.Send(Increment)
+    Counter.Send(Reset)
+}

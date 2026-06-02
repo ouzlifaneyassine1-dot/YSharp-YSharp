@@ -1,0 +1,51 @@
+// Y# Math Library — full numeric toolkit for games & simulations
+
+Const PI = 3.141592653589793
+Const E  = 2.718281828459045
+Const TAU = 6.283185307179586
+Const INF = 1.0 / 0.0
+
+// --- Basic ---
+Function Abs(x)     { Return If (x < 0) -x Else x }
+Function Max(a, b)  { Return If (a > b) a Else b }
+Function Min(a, b)  { Return If (a < b) a Else b }
+Function Clamp(val, min, max) { Return Min(Max(val, min), max) }
+Function Sign(x)    { Return If (x > 0) 1 Else If (x < 0) -1 Else 0 }
+Function Square(x)  { Return x * x }
+
+// --- Interpolation ---
+Function Lerp(a, b, t)           { Return a + (b - a) * t }
+Function InverseLerp(a, b, v)    { Return (v - a) / (b - a) }
+Function Remap(v, a1, b1, a2, b2){ Return a2 + (v - a1) * (b2 - a2) / (b1 - a1) }
+Function SmoothStep(t)           { Return t * t * (3 - 2 * t) }
+
+// --- Trigonometry ---
+Function Sin(x) -> Float { }
+Function Cos(x) -> Float { }
+Function Tan(x) -> Float { }
+Function Asin(x) -> Float { }
+Function Acos(x) -> Float { }
+Function Atan(x) -> Float { }
+Function Atan2(y, x) -> Float { }
+Function DegToRad(deg) { Return deg * PI / 180.0 }
+Function RadToDeg(rad) { Return rad * 180.0 / PI }
+
+// --- Rounding ---
+Function Floor(x) -> Int { }
+Function Ceil(x) -> Int { }
+Function Round(x) -> Int { }
+Function Trunc(x) -> Int { }
+Function Frac(x) -> Float { Return x - ToFloat(Trunc(x)) }
+
+// --- Exp / Log ---
+Function Exp(x) -> Float { }
+Function Log(x) -> Float { }
+Function Log2(x) -> Float { }
+Function Log10(x) -> Float { }
+Function Pow(base, exp) -> Float { }
+Function Sqrt(x) -> Float { }
+
+// --- Random ---
+Function Random() -> Float { }
+Function RandomRange(min, max) -> Float { Return min + Random() * (max - min) }
+Function RandomInt(min, max) -> Int { Return ToInt(RandomRange(min, max + 1)) }

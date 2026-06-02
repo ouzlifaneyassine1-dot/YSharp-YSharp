@@ -1,0 +1,102 @@
+// Y# Web Application Demo — reactive SPA
+Import "std/core/io"
+Import "std/web/dom"
+
+// View: counter widget
+Function CounterView() -> View {
+    Var count = StateCreate(0)
+    
+    Function increment() {
+        StateSet(count, StateGet(count) + 1)
+    }
+    
+    Function decrement() {
+        StateSet(count, StateGet(count) - 1)
+    }
+    
+    Var container = CreateElement("div")
+    ElementClass(container, "counter")
+    
+    Var title = CreateElement("h2")
+    ElementText(title, "Y# Counter")
+    ElementAppend(container, title)
+    
+    Var valueDisplay = CreateElement("span")
+    ElementClass(valueDisplay, "value")
+    
+    // Reactive update
+    StateWatch(count, Function(val) {
+        ElementText(valueDisplay, ToString(val))
+    })
+    ElementAppend(container, valueDisplay)
+    
+    Var incBtn = CreateElement("button")
+    ElementText(incBtn, " + ")
+    ElementOn(incBtn, "click", increment)
+    ElementAppend(container, incBtn)
+    
+    Var decBtn = CreateElement("button")
+    ElementText(decBtn, " - ")
+    ElementOn(decBtn, "click", decrement)
+    ElementAppend(container, decBtn)
+    
+    Return container
+}
+
+// View: todo list
+Function TodoView() -> View {
+    Var todos = StateCreate(ListCreate())
+    Var input = StateCreate("")
+    
+    Function addTodo() {
+        Var text = StateGet(input)
+        If StringLength(text) > 0 {
+            Var items = StateGet(todos)
+            ListAdd(items, text)
+            StateSet(todos, items)
+            StateSet(input, "")
+        }
+    }
+    
+    Var container = CreateElement("div")
+    ElementClass(container, "todos")
+    
+    Var title = CreateElement("h2")
+    ElementText(title, "Y# Todo List")
+    ElementAppend(container, title)
+    
+    Var inputEl = CreateElement("input")
+    ElementAttr(inputEl, "placeholder", "What needs to be done?")
+    ElementOn(inputEl, "input", Function(e) {
+        StateSet(input, e.value)
+    })
+    ElementAppend(container, inputEl)
+    
+    Var addBtn = CreateElement("button")
+    ElementText(addBtn, "Add")
+    ElementOn(addBtn, "click", addTodo)
+    ElementAppend(container, addBtn)
+    
+    Var listEl = CreateElement("ul")
+    StateWatch(todos, Function(items) {
+        ElementHtml(listEl, "")
+        For i = 0 To ListLength(items) - 1 {
+            Var li = CreateElement("li")
+            ElementText(li, ListGet(items, i))
+            ElementAppend(listEl, li)
+        }
+    })
+    ElementAppend(container, listEl)
+    
+    Return container
+}
+
+Function Main() {
+    // Setup routing
+    Route("/", CounterView)
+    Route("/todos", TodoView)
+    
+    // Mount root
+    RenderComponent(CounterView())
+    PrintLine("Y# Web App running!")
+}

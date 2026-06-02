@@ -1,0 +1,22 @@
+[package]
+name = "oys-runtime"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+libc = "0.2"
+
+[features]
+default = ["gc", "async-runtime"]
+gc = []
+async-runtime = []
+tensor-ops = []
+ecs = []
+no-std = []
+
+[profile.release]
+lto = true
+opt-level = 3

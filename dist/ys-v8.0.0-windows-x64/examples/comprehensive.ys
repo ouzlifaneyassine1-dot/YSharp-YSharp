@@ -1,0 +1,15 @@
+Program ComprehensiveTest {
+    var x = 10;
+    if (x > 5) {
+        Print("x is large: ");
+        PrintLine(x);
+    }
+    Loop(i from 1 to 4) {
+        if (i == 3) {
+            PrintLine("three");
+        } else {
+            Print(i);
+        }
+    }
+    PrintLine("done");
+}

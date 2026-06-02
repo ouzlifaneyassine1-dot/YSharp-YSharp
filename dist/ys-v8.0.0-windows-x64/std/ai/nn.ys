@@ -1,0 +1,23 @@
+// Y# Neural Network Module — high-level model building
+
+Function Sequential() -> Model { }
+Function ModelAdd(model, layer: Layer) { }
+Function ModelForward(model, input: Tensor) -> Tensor { }
+Function ModelTrain(model, data: List, labels: List, epochs: Int, lr) { }
+Function ModelSave(model, path: String) { }
+Function ModelLoad(path: String) -> Model { }
+Function ModelSummary(model) { }
+
+Struct Layer {
+    type: String,
+    units: Int,
+    activation: String,
+    kernel: Tensor,
+    bias: Tensor,
+}
+
+Function DenseLayer(units: Int, activation: String) -> Layer { }
+Function ConvLayer(filters: Int, kernelSize: Int, activation: String) -> Layer { }
+Function MaxPoolLayer(size: Int) -> Layer { }
+Function DropoutLayer(rate) -> Layer { }
+Function FlattenLayer() -> Layer { }

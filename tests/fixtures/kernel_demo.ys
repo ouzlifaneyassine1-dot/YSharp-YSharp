@@ -1,0 +1,23 @@
+Program System MiniKernel {
+    const PAGE_SIZE = 4096
+    const UART_BASE = 0x3F8
+    
+    On(Interrupt::Timer) {
+        scheduler.Next()
+    }
+    
+    On(Interrupt::KeyPress(key)) {
+        Uart.Write(key)
+    }
+    
+    Map(device: UART, address: UART_BASE)
+    
+    Function Uart.Write(char: Byte) {
+        Asm("mov dx, [UART_BASE]")
+        Asm("out dx, al", input: char)
+    }
+    
+    While (true) {
+        Asm("hlt")
+    }
+}

@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "install-ys"
+version = "8.0.0"
+edition = "2024"
+
+[dependencies]
+zip = "2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+strip = "symbols"

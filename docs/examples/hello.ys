@@ -1,0 +1,16 @@
+// Y# Hello World — minimal intro
+Import "std/core/io"
+
+Function Main() {
+    PrintLine("Hello from Y#!")
+    
+    Var name = ReadLine()
+    Print("Welcome, ")
+    PrintLine(name)
+    
+    // Simple math
+    Var a = 42
+    Var b = 7
+    PrintLine("42 + 7 = " + ToString(a + b))
+    PrintLine("42 * 7 = " + ToString(a * b))
+}
