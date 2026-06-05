@@ -1,0 +1,9 @@
+fn main
+    var x = 42
+    if x > 10
+        println large
+    loop i from 1 to 3
+        print 'Value: '
+        println $i
+    print Hello World
+    return 0

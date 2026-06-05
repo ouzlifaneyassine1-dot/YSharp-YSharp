@@ -1,0 +1,5 @@
+Program Main {
+    Function foo() {
+        Print("a");
+    }
+}

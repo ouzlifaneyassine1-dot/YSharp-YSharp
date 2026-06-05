@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 pub mod driver;
+pub mod easy;
 pub mod error;
 pub mod lexer;
 pub mod parser;

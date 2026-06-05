@@ -4,7 +4,7 @@ use nom::{
     character::complete::{char, digit1, multispace0, multispace1, none_of, one_of},
     combinator::{map, map_res, opt, recognize, value, verify},
     multi::{many0, separated_list0},
-    sequence::{delimited, pair, separated_pair, terminated},
+    sequence::{delimited, pair, terminated},
     IResult, Parser,
 };
 use smol_str::SmolStr;
@@ -127,23 +127,22 @@ fn string_literal<'a>(input: &'a str) -> ParseResult<'a, AstNode> {
 
 fn type_expr<'a>(input: &'a str) -> ParseResult<'a, TypeExpr> {
     alt((
-        map(ident, TypeExpr::Named),
         value(TypeExpr::Infer, tag("_")),
+        map(ident, TypeExpr::Named),
     )).parse(input)
 }
 
 fn param<'a>(input: &'a str) -> ParseResult<'a, Param> {
-    map(
-        separated_pair(
-            ident,
-            ws(tag(":")),
-            type_expr,
-        ),
-        |(name, ty)| Param {
-            name,
-            type_expr: Some(ty),
-        },
-    ).parse(input)
+    let (input, name) = ident(input)?;
+    let (input, type_expr) = match ws(tag(":")).parse(input) {
+        Ok((rest, _)) => {
+            let (rest, te) = type_expr(rest)?;
+            (rest, Some(te))
+        }
+        Err(nom::Err::Error(_)) => (input, None),
+        Err(e) => return Err(e),
+    };
+    Ok((input, Param { name, type_expr }))
 }
 
 fn params<'a>(input: &'a str) -> ParseResult<'a, Vec<Param>> {
@@ -232,19 +231,20 @@ pub fn parse_program(input: &str) -> Result<(AstArena, AstId), String> {
 }
 
 fn stmt_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
+    let (input, _) = skip_whitespace_and_comments(input)?;
     var_decl(arena, input)
         .or_else(|_| if_stmt(arena, input))
         .or_else(|_| while_stmt(arena, input))
         .or_else(|_| loop_stmt(arena, input))
         .or_else(|_| return_stmt(arena, input))
-        .or_else(|_| expr_stmt(arena, input))
-        .or_else(|_| block_stmt(arena, input))
+        .or_else(|_| fn_def(arena, input))
         .or_else(|_| entity_def(arena, input))
         .or_else(|_| system_def(arena, input))
         .or_else(|_| actor_def(arena, input))
         .or_else(|_| view_decl(arena, input))
         .or_else(|_| state_decl(arena, input))
-        .or_else(|_| fn_def(arena, input))
+        .or_else(|_| block_stmt(arena, input))
+        .or_else(|_| expr_stmt(arena, input))
 }
 
 fn stmt<'a>(arena: &std::cell::RefCell<AstArena>, _input: &'a str) -> ParseResult<'a, AstId> {

@@ -6,7 +6,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oysterlang/ys"
+    "url": "https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp"
+  },
+  "files": [
+    "package.json",
+    "install.js",
+    "oys.exe",
+    "yo.exe"
+  ],
+  "bin": {
+    "ys-lang": "bin/oys.exe"
   },
   "scripts": {
     "postinstall": "node install.js"

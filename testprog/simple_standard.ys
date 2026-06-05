@@ -1,0 +1,7 @@
+Program Main {
+    Function main() {
+        Print("Hello World");
+        Return 0;
+    }
+}
+

@@ -34,20 +34,40 @@ pub fn infer_expr(
             let right_ty = infer_expr(arena, *right, env)?;
 
             match op {
-                BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
-                    // Numeric operations: accept Int or Float
+                BinOp::Add => {
+                    // Addition: numeric OR string concatenation
+                    let left_is_str = matches!(&left_ty, Type::String);
+                    let right_is_str = matches!(&right_ty, Type::String);
+                    if left_is_str || right_is_str {
+                        unify(&left_ty, &Type::String, env)?;
+                        unify(&right_ty, &Type::String, env)?;
+                        Ok(Type::String)
+                    } else {
+                        let numeric = |ty: &Type| -> bool {
+                            matches!(ty, Type::Int | Type::Float | Type::TypeVar(_))
+                        };
+                        if !numeric(&left_ty) && !matches!(left_ty, Type::TypeVar(_)) {
+                            return Err(TypeError::new(format!("Left operand must be numeric or string, got {:?}", left_ty)));
+                        }
+                        if !numeric(&right_ty) && !matches!(right_ty, Type::TypeVar(_)) {
+                            return Err(TypeError::new(format!("Right operand must be numeric or string, got {:?}", right_ty)));
+                        }
+                        match (&left_ty, &right_ty) {
+                            (Type::Float, _) | (_, Type::Float) => Ok(Type::Float),
+                            _ => Ok(Type::Int),
+                        }
+                    }
+                }
+                BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
                     let numeric = |ty: &Type| -> bool {
                         matches!(ty, Type::Int | Type::Float | Type::TypeVar(_))
                     };
-
                     if !numeric(&left_ty) && !matches!(left_ty, Type::TypeVar(_)) {
                         return Err(TypeError::new(format!("Left operand must be numeric, got {:?}", left_ty)));
                     }
                     if !numeric(&right_ty) && !matches!(right_ty, Type::TypeVar(_)) {
                         return Err(TypeError::new(format!("Right operand must be numeric, got {:?}", right_ty)));
                     }
-
-                    // If both are same type, return that; if one is Float, return Float
                     match (&left_ty, &right_ty) {
                         (Type::Float, _) | (_, Type::Float) => Ok(Type::Float),
                         _ => Ok(Type::Int),

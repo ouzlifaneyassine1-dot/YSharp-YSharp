@@ -65,9 +65,26 @@ impl<'a> Session<'a> {
         file: &str,
         target_str: &str,
         output: Option<&str>,
+        easy: bool,
+        link_flags: &[String],
+        opt_level: &str,
+        cpp_mode: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let source = std::fs::read_to_string(file)
+        let raw_source = std::fs::read_to_string(file)
             .map_err(|e| format!("cannot read source '{}': {}", file, e))?;
+
+        // Auto-detect Y# Easy by extension or --easy flag
+        let is_easy = easy || file.ends_with(".yse");
+
+        let source = if is_easy {
+            let transpiled = crate::easy::transpile(&raw_source);
+            self.log_sender
+                .try_send(format!("[info] transpiled Y# Easy -> Y# ({} -> {} bytes)", raw_source.len(), transpiled.len()))
+                .ok();
+            transpiled
+        } else {
+            raw_source.clone()
+        };
 
         let fpath = SmolStr::from(file);
         self.source_map.insert(fpath.clone(), source.clone());
@@ -76,14 +93,14 @@ impl<'a> Session<'a> {
             .borrow_mut()
             .insert(fpath.clone(), source.clone());
 
-        let target = Target::from_str(target_str)
-            .map_err(|e| format!("invalid target '{}': {}", target_str, e))?;
-
         self.log_sender
             .try_send(format!("[info] reading '{}' ({} bytes)", file, source.len()))
             .ok();
 
         // --- Pipeline ---
+
+        let target = Target::from_str(target_str)
+            .map_err(|e| format!("invalid target '{}': {}", target_str, e))?;
 
         let mut bg = BuildGraph::new();
         bg.add_file(fpath.clone(), source);
@@ -125,24 +142,7 @@ impl<'a> Session<'a> {
         // Phase 3: Type checking — strict, errors block the build
         let mut type_env = crate::typeck::TypeEnv::new();
         // Register built-in runtime functions
-        let print_param = type_env.fresh_type_var();
-        type_env.bind_fn(
-            SmolStr::new("Print"),
-            crate::typeck::context::FunctionType {
-                params: vec![print_param],
-                ret: crate::typeck::context::Type::Void,
-                is_differentiable: false,
-            },
-        );
-        let printline_param = type_env.fresh_type_var();
-        type_env.bind_fn(
-            SmolStr::new("PrintLine"),
-            crate::typeck::context::FunctionType {
-                params: vec![printline_param],
-                ret: crate::typeck::context::Type::Void,
-                is_differentiable: false,
-            },
-        );
+        register_builtins(&mut type_env);
         if let Err(type_err) = crate::typeck::infer_expr(&parser_arena, root_id, &mut type_env) {
             let err_span = type_err.span.map(|(line, col)| {
                 crate::error::Span::new(fpath.clone(), line, col, line, col + 1)
@@ -159,25 +159,32 @@ impl<'a> Session<'a> {
         let conversion = crate::hir::lower::from_parser_ast(&parser_arena)
             .map_err(|e| format!("AST conversion failed: {}", e))?;
 
-        // Phase 5: Lower main body to HIR nodes
-        let main_hir = crate::hir::lower::lower(&conversion.arena, &conversion.body_ids)
-            .map_err(|e| format!("HIR lowering failed: {}", e))?;
-
-        // Build the main function
-        let main_fn = crate::hir::HirFunction {
-            name: smol_str::SmolStr::new("main"),
-            params: vec![],
-            ret_type: crate::hir::HirType::Int,
-            body: main_hir,
-            is_async: false,
-            is_differentiable: false,
-        };
-
-        // Collect all functions (main + extracted definitions)
+        // Build the main function (from program body or extracted definition)
         let all_hir_fns: Vec<crate::hir::HirFunction> = {
-            let mut fns = vec![main_fn];
-            fns.extend(conversion.functions);
-            fns
+            // Check if any extracted function is named "main" (from `Function main()` inside Program)
+            let existing_main = conversion.functions.iter().position(|f| f.name == "main");
+
+            if let Some(idx) = existing_main {
+                // Use the extracted `main` function directly, skip body-based main
+                let mut fns: Vec<crate::hir::HirFunction> = conversion.functions;
+                let main_fn = fns.remove(idx);
+                vec![main_fn].into_iter().chain(fns).collect()
+            } else {
+                // Lower program body as main()
+                let main_hir = crate::hir::lower::lower(&conversion.arena, &conversion.body_ids)
+                    .map_err(|e| format!("HIR lowering failed: {}", e))?;
+                let main_fn = crate::hir::HirFunction {
+                    name: smol_str::SmolStr::new("main"),
+                    params: vec![],
+                    ret_type: crate::hir::HirType::Int,
+                    body: main_hir,
+                    is_async: false,
+                    is_differentiable: false,
+                };
+                let mut fns = vec![main_fn];
+                fns.extend(conversion.functions);
+                fns
+            }
         };
 
         self.log_sender
@@ -211,22 +218,213 @@ impl<'a> Session<'a> {
             .map(|s| s.to_string())
             .unwrap_or_else(|| target.default_output_name());
 
-        let codegen_result = crate::codegen::generate(&module, &output_path)
+        let result = crate::codegen::generate(&module, &output_path, link_flags, opt_level, cpp_mode)
             .map_err(|e| format!("codegen failed: {}", e))?;
+
+        let actual_path = match &result {
+            crate::codegen::CodegenResult::Native(p)
+            | crate::codegen::CodegenResult::Object(p) => p.clone(),
+            crate::codegen::CodegenResult::SpirV(p) => p.clone(),
+        };
 
         self.log_sender
             .try_send(format!(
                 "[info] codegen: {:?} -> {}",
-                codegen_result, output_path
+                result, output_path
             ))
             .ok();
 
         self.log_sender
-            .try_send(format!("[info] build finished: {}", output_path))
+            .try_send(format!("[info] build finished: {}", actual_path))
             .ok();
 
-        Ok(output_path)
+        Ok(actual_path)
     }
+}
+
+/// Register all built-in runtime functions with their type signatures.
+fn register_builtins(type_env: &mut crate::typeck::TypeEnv) {
+    use crate::typeck::context::{FunctionType, Type};
+    macro_rules! builtin {
+        ($name:expr, [$($p:expr),*], $ret:expr) => {
+            type_env.bind_fn(SmolStr::new($name), FunctionType {
+                params: vec![$($p),*],
+                ret: $ret,
+                is_differentiable: false,
+            });
+        };
+        (poly $name:expr, $ret:expr) => {
+            let p = type_env.fresh_type_var();
+            type_env.bind_fn(SmolStr::new($name), FunctionType {
+                params: vec![p],
+                ret: $ret,
+                is_differentiable: false,
+            });
+        };
+    }
+    use Type::*;
+
+    // --- I/O ---
+    builtin!("Print", [], Void);
+    builtin!("PrintLine", [], Void);
+    let p = type_env.fresh_type_var();
+    type_env.bind_fn(SmolStr::new("Print"), FunctionType { params: vec![p], ret: Void, is_differentiable: false });
+    let p = type_env.fresh_type_var();
+    type_env.bind_fn(SmolStr::new("PrintLine"), FunctionType { params: vec![p], ret: Void, is_differentiable: false });
+    builtin!("ReadLine", [], String);
+    builtin!("ReadInt", [], Int);
+    builtin!("ReadFloat", [], Float);
+    builtin!("ReadAllText", [String], String);
+    builtin!("WriteAllText", [String, String], Void);
+    builtin!("AppendAllText", [String, String], Void);
+    builtin!("FileExists", [String], Bool);
+    builtin!("FileDelete", [String], Void);
+    builtin!("FileCopy", [String, String], Void);
+    builtin!("FileMove", [String, String], Void);
+    builtin!("FileSize", [String], Int);
+
+    // --- Directory ---
+    builtin!("DirCreate", [String], Void);
+    builtin!("DirDelete", [String], Void);
+    builtin!("DirExists", [String], Bool);
+    builtin!("DirList", [String], String);
+    builtin!("GetCurrentDir", [], String);
+    builtin!("SetCurrentDir", [String], Void);
+
+    // --- Console ---
+    builtin!("ClearScreen", [], Void);
+    builtin!("CursorPos", [Int, Int], Void);
+    builtin!("GetCursorX", [], Int);
+    builtin!("GetCursorY", [], Int);
+    builtin!("SetColor", [Int], Void);
+    builtin!("ReadKey", [], Int);
+
+    // --- System ---
+    builtin!("ExitF", [Int], Void);
+    builtin!("SleepF", [Int], Void);
+    builtin!("Exec", [String], Int);
+    builtin!("ExecOutput", [String], String);
+    builtin!("GetEnv", [String], String);
+    builtin!("SetEnv", [String, String], Void);
+    builtin!("GetOS", [], String);
+    builtin!("GetPID", [], Int);
+    builtin!("GetUserName", [], String);
+    builtin!("GetHostName", [], String);
+    builtin!("GetCPUCount", [], Int);
+
+    // --- Time ---
+    builtin!("NowUnix", [], Int);
+    builtin!("NowMillis", [], Int);
+    builtin!("NowString", [], String);
+    builtin!("DateString", [], String);
+    builtin!("TimeString", [], String);
+    builtin!("Year", [], Int);
+    builtin!("Month", [], Int);
+    builtin!("Day", [], Int);
+    builtin!("Hour", [], Int);
+    builtin!("Minute", [], Int);
+    builtin!("Second", [], Int);
+
+    // --- String ---
+    builtin!("StringLen", [String], Int);
+    builtin!("StringSub", [String, Int, Int], String);
+    builtin!("StringSplit", [String, String], String);
+    builtin!("StringContains", [String, String], Bool);
+    builtin!("StringReplace", [String, String, String], String);
+    builtin!("StringTrim", [String], String);
+    builtin!("StringTrimLeft", [String], String);
+    builtin!("StringTrimRight", [String], String);
+    builtin!("StringToUpper", [String], String);
+    builtin!("StringToLower", [String], String);
+    builtin!("StringStartsWith", [String, String], Bool);
+    builtin!("StringEndsWith", [String, String], Bool);
+    builtin!("StringAt", [String, Int], String);
+    builtin!("StringPadLeft", [String, Int, String], String);
+    builtin!("StringPadRight", [String, Int, String], String);
+
+    // --- Conversion ---
+    builtin!("ToInt", [Int], Int);
+    builtin!("ToFloat", [Float], Float);
+    builtin!("ToString", [String], String);
+    builtin!("ParseInt", [String], Int);
+    builtin!("ParseFloat", [String], Float);
+    builtin!("Format", [String, String], String);
+    builtin!("IntToStr", [Int], String);
+    builtin!("FloatToStr", [Float], String);
+    builtin!("BoolToStr", [Bool], String);
+    builtin!("StrToInt", [String], Int);
+    builtin!("StrToFloat", [String], Float);
+    builtin!("CharCode", [String], Int);
+    builtin!("CodeChar", [Int], String);
+
+    // --- Math ---
+    builtin!("Abs", [Int], Int);
+    builtin!("AbsF", [Float], Float);
+    builtin!("Min", [Int, Int], Int);
+    builtin!("MinF", [Float, Float], Float);
+    builtin!("Max", [Int, Int], Int);
+    builtin!("MaxF", [Float, Float], Float);
+    builtin!("Clamp", [Int, Int, Int], Int);
+    builtin!("ClampF", [Float, Float, Float], Float);
+    builtin!("Sin", [Float], Float);
+    builtin!("Cos", [Float], Float);
+    builtin!("Tan", [Float], Float);
+    builtin!("Asin", [Float], Float);
+    builtin!("Acos", [Float], Float);
+    builtin!("Atan", [Float], Float);
+    builtin!("Atan2", [Float, Float], Float);
+    builtin!("Sqrt", [Float], Float);
+    builtin!("Pow", [Float, Float], Float);
+    builtin!("Exp", [Float], Float);
+    builtin!("Log", [Float], Float);
+    builtin!("Log2", [Float], Float);
+    builtin!("Log10", [Float], Float);
+    builtin!("Floor", [Float], Int);
+    builtin!("Ceil", [Float], Int);
+    builtin!("Round", [Float], Int);
+    builtin!("Trunc", [Float], Int);
+    builtin!("Frac", [Float], Float);
+    builtin!("Sign", [Int], Int);
+    builtin!("SignF", [Float], Float);
+    builtin!("Lerp", [Float, Float, Float], Float);
+    builtin!("Random", [], Float);
+    builtin!("RandomRange", [Float, Float], Float);
+    builtin!("RandomInt", [Int, Int], Int);
+    builtin!("SeedRandom", [Int], Void);
+    builtin!("DegToRad", [Float], Float);
+    builtin!("RadToDeg", [Float], Float);
+    builtin!("Hypot", [Float, Float], Float);
+
+    // --- Memory / Advanced ---
+    builtin!("MemoryAddress", [Int], Int);
+    builtin!("MemorySize", [], Int);
+    builtin!("StackAlloc", [Int], Int);
+    builtin!("StackFree", [Int], Void);
+    builtin!("CopyMem_", [Int, Int, Int], Void);
+    builtin!("CompareMemory", [Int, Int, Int], Bool);
+    builtin!("SetMemory", [Int, Int, Int], Void);
+
+    // --- Process ---
+    builtin!("RunProcess", [String, String], Int);
+    builtin!("KillProcess", [Int], Void);
+    builtin!("ProcessExists", [Int], Bool);
+    builtin!("WaitProcess", [Int], Int);
+
+    // --- Network ---
+    builtin!("HttpGet", [String], String);
+    builtin!("HttpPost", [String, String], String);
+    builtin!("HttpGetJson", [String], String);
+    builtin!("HttpPostJson", [String, String], String);
+    builtin!("DownloadFile", [String, String], Bool);
+    builtin!("PingHost", [String], Bool);
+    builtin!("ResolveHost", [String], String);
+
+    // --- Type ---
+    builtin!("TypeOf", [Int], String);
+    builtin!("IsInt", [Int], Bool);
+    builtin!("IsFloat", [Float], Bool);
+    builtin!("IsString", [String], Bool);
+    builtin!("IsBool", [Bool], Bool);
 }
 
 /// Try to extract a source span from an error message that might contain

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod driver;
+mod easy;
 mod error;
 mod lexer;
 mod parser;
@@ -31,11 +32,27 @@ enum Commands {
         output: Option<String>,
         #[arg(short = 'L', long = "log-level", default_value = "warn")]
         log_level: String,
+        #[arg(short = 'e', long = "easy")]
+        easy: bool,
+        #[arg(short = 'l', long = "link")]
+        link: Vec<String>,
+        #[arg(short = 'O', long = "opt", default_value = "2")]
+        opt: String,
+        #[arg(long = "cpp")]
+        cpp: bool,
         file: String,
     },
     Run {
         #[arg(short = 't', long = "target", default_value = "native")]
         target: String,
+        #[arg(short = 'e', long = "easy")]
+        easy: bool,
+        #[arg(short = 'l', long = "link")]
+        link: Vec<String>,
+        #[arg(short = 'O', long = "opt", default_value = "2")]
+        opt: String,
+        #[arg(long = "cpp")]
+        cpp: bool,
         file: String,
     },
     Pack {
@@ -47,6 +64,9 @@ enum Commands {
     },
     New {
         name: String,
+    },
+    EasyDebug {
+        file: String,
     },
 }
 
@@ -74,10 +94,10 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Build { target, output, log_level, file } => {
+        Commands::Build { target, output, log_level, easy, link, opt, cpp, file } => {
             let diag = Diagnostics::new();
             let mut session = Session::new(&diag, &log_level);
-            let result = session.build(&file, &target, output.as_deref());
+            let result = session.build(&file, &target, output.as_deref(), easy, &link, &opt, cpp);
             match result {
                 Ok(path) => eprintln!("Build succeeded: {}", path),
                 Err(e) => {
@@ -87,12 +107,13 @@ fn main() {
                 }
             }
         }
-        Commands::Run { target, file } => {
+        Commands::Run { target, easy, link, opt, cpp, file } => {
             let diag = Diagnostics::new();
             let mut session = Session::new(&diag, "warn");
-            match session.build(&file, &target, None) {
+            match session.build(&file, &target, None, easy, &link, &opt, cpp) {
                 Ok(path) => {
-                    let status = std::process::Command::new(&path)
+                    let abs_path = std::path::absolute(&path).unwrap_or_else(|_| std::path::PathBuf::from(&path));
+                    let status = std::process::Command::new(&abs_path)
                         .status()
                         .expect("failed to run compiled binary");
                     std::process::exit(status.code().unwrap_or(0));
@@ -123,7 +144,7 @@ fn main() {
                         .unwrap()
                         .filter_map(|e| e.ok())
                         .map(|e| e.path())
-                        .filter(|p| p.extension().map(|e| e == "ys").unwrap_or(false))
+                        .filter(|p| matches!(p.extension().and_then(|e| e.to_str()), Some("ys" | "yse")))
                         .collect()
                 } else {
                     vec![p.to_path_buf()]
@@ -152,12 +173,17 @@ fn main() {
                     &path.to_string_lossy(),
                     "native",
                     None,
+                    filename.ends_with(".yse"),
+                    &[],
+                    "0",
+                    false,
                 );
 
                 match result {
                     Ok(exe_path) => {
-                        // Run the compiled binary and capture output
-                        let run_result = std::process::Command::new(&exe_path)
+                        // Resolve to absolute path for Windows command resolution
+                        let abs_path = std::path::absolute(&exe_path).unwrap_or_else(|_| std::path::PathBuf::from(&exe_path));
+                        let run_result = std::process::Command::new(&abs_path)
                             .output();
                         match run_result {
                             Ok(output) => {
@@ -175,7 +201,7 @@ fn main() {
                                     failed += 1;
                                 }
                                 // Clean up compiled binary
-                                let _ = std::fs::remove_file(&exe_path);
+                                let _ = std::fs::remove_file(&abs_path);
                             }
                             Err(e) => {
                                 println!("\x1b[1;31mFAILED\x1b[0m (could not run: {})", e);
@@ -208,6 +234,12 @@ fn main() {
             if failed > 0 {
                 std::process::exit(1);
             }
+        }
+        Commands::EasyDebug { file } => {
+            let src = std::fs::read_to_string(&file)
+                .map_err(|e| format!("cannot read '{}': {}", file, e)).unwrap();
+            let result = crate::easy::transpile(&src);
+            println!("{}", result);
         }
         Commands::New { name } => {
             std::fs::create_dir_all(&name).expect("failed to create project dir");

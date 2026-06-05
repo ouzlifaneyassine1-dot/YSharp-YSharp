@@ -15,7 +15,7 @@ pub enum CodegenResult {
 /// Collected string literal: (vreg_name, string_value)
 pub type StringLiteralEntry = (SmolStr, SmolStr);
 
-pub fn generate(module: &MirModule, output: &str) -> Result<CodegenResult, String> {
+pub fn generate(module: &MirModule, output: &str, link_flags: &[String], opt_level: &str, cpp_mode: bool) -> Result<CodegenResult, String> {
     match module.target {
         crate::mir::ir::Target::Native
         | crate::mir::ir::Target::Server
@@ -24,7 +24,7 @@ pub fn generate(module: &MirModule, output: &str) -> Result<CodegenResult, Strin
         | crate::mir::ir::Target::Wasm
         | crate::mir::ir::Target::Kernel => {
             let backend_module = convert_to_cmir(module);
-            c_backend::generate(&backend_module, output).map(CodegenResult::Native)
+            c_backend::generate(&backend_module, output, link_flags, opt_level, cpp_mode).map(CodegenResult::Native)
         }
         crate::mir::ir::Target::Game => {
             let game_module = convert_to_game_mir(module);

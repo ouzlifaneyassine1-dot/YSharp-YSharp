@@ -33,12 +33,15 @@ pub struct CMirModule {
     pub string_literals: Vec<(SmolStr, SmolStr)>,
 }
 
-pub fn generate(module: &CMirModule, output: &str) -> Result<String, String> {
+pub fn generate(module: &CMirModule, output: &str, link_flags: &[String], opt_level: &str, cpp_mode: bool) -> Result<String, String> {
     let exe_path = if output.ends_with(".exe") { output.to_string() } else { format!("{}.exe", output) };
     let c_path = format!("{}.c", exe_path);
     let mut out = String::new();
 
-    out.push_str("#include <stdio.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <stddef.h>\n#include <string.h>\n\n");
+    out.push_str("#define WIN32_LEAN_AND_MEAN\n#include <stdio.h>\n#include <stdlib.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <stddef.h>\n#include <string.h>\n#include <math.h>\n#include <time.h>\n#include <ctype.h>\n#include <sys/stat.h>\n#include <direct.h>\n#include <process.h>\n#include <conio.h>\n#include <winsock2.h>\n#include <ws2tcpip.h>\n#include <windows.h>\n\n");
+
+    // Global result buffer for string-returning built-in functions
+    out.push_str("int8_t _ys_retbuf[65536];\n\n");
 
     // Forward declarations for runtime built-ins (needed before user code)
     out.push_str("int64_t _ys_print_str(const int8_t* s);\n");
@@ -46,14 +49,12 @@ pub fn generate(module: &CMirModule, output: &str) -> Result<String, String> {
     out.push_str("int64_t _ys_print_float(double v);\n");
     out.push_str("int64_t _ys_print_newline();\n\n");
 
-    // Emit extern declarations for functions with empty bodies (builtins)
+    // Forward declarations for all functions
     for func in &module.functions {
-        if func.blocks.is_empty() {
-            out.push_str(&format!("extern {} {}(", emit_c_type(&func.return_type), func.name));
-            let params: Vec<String> = func.params.iter().map(|(_, t)| emit_c_type(t)).collect();
-            out.push_str(&params.join(", "));
-            out.push_str(");\n");
-        }
+        out.push_str(&format!("{} {}(", emit_c_type(&func.return_type), func.name));
+        let params: Vec<String> = func.params.iter().map(|(_, t)| emit_c_type(t)).collect();
+        out.push_str(&params.join(", "));
+        out.push_str(");\n");
     }
     out.push('\n');
 
@@ -76,22 +77,34 @@ pub fn generate(module: &CMirModule, output: &str) -> Result<String, String> {
     }
 
     // Emit runtime function implementations (built-in stubs)
-    out.push_str("int64_t _ys_print_str(const int8_t* s) {\n    printf(\"%s\", s);\n    return 0;\n}\n");
-    out.push_str("int64_t _ys_print_int(int64_t v) {\n    printf(\"%lld\", v);\n    return 0;\n}\n");
-    out.push_str("int64_t _ys_print_float(double v) {\n    printf(\"%f\", v);\n    return 0;\n}\n");
-    out.push_str("int64_t _ys_print_newline() {\n    printf(\"\\n\");\n    return 0;\n}\n");
+    out.push_str(include_str!("runtime.c"));
     out.push('\n');
 
     std::fs::write(&c_path, &out).map_err(|e| format!("failed to write C: {}", e))?;
 
-    // Find gcc in common locations and add its directory to PATH
-    let gcc_path = find_gcc();
+    // Find gcc (or g++ for C++ mode) in common locations
+    let compiler_name = if cpp_mode { "g++" } else { "gcc" };
+    let gcc_path = find_compiler(compiler_name);
     let (gcc_cmd, gcc_dir) = match gcc_path {
         Some(ref p) => (p.to_string_lossy().to_string(), p.parent().map(|d| d.to_path_buf())),
-        None => ("gcc".to_string(), None),
+        None => (compiler_name.to_string(), None),
     };
 
-    // Compile + link with gcc to produce .exe
+    // Map optimization level to GCC flags
+    let opt_flag = match opt_level {
+        "0" => "-O0",
+        "1" => "-O1",
+        "2" => "-O2",
+        "3" => "-O3",
+        "s" => "-Os",
+        "z" => "-Oz",
+        _ => "-O2",
+    };
+
+    // Determine language standard
+    let std_flag = if cpp_mode { "-std=c++17" } else { "-std=c99" };
+
+    // Compile + link to produce .exe
     let mut test_cmd = std::process::Command::new(&gcc_cmd);
     test_cmd.arg("--version");
     if let Some(ref dir) = gcc_dir {
@@ -105,7 +118,9 @@ pub fn generate(module: &CMirModule, output: &str) -> Result<String, String> {
     if let Ok(s) = test_cmd.output() {
         if s.status.success() {
             let mut build_cmd = std::process::Command::new(&gcc_cmd);
-            build_cmd.args(["-O2", "-std=c99", "-o", &exe_path, &c_path]);
+            build_cmd.args([opt_flag, "-flto", std_flag, "-o", &exe_path, &c_path, "-lws2_32"]);
+            if cpp_mode { build_cmd.arg("-lstdc++"); }
+            for flag in link_flags { build_cmd.arg(format!("-l{}", flag)); }
             if let Some(ref dir) = gcc_dir {
                 let mut path = OsString::from(dir);
                 path.push(";");
@@ -114,36 +129,43 @@ pub fn generate(module: &CMirModule, output: &str) -> Result<String, String> {
                 }
                 build_cmd.env("PATH", &path);
             }
-            let r = build_cmd.status().map_err(|e| format!("gcc: {}", e))?;
+            let r = build_cmd.status().map_err(|e| format!("{}: {}", compiler_name, e))?;
             if r.success() {
-                // Remove .c file on success
                 let _ = std::fs::remove_file(&c_path);
                 return Ok(exe_path);
             }
         }
     }
-    // Fallback: return .c path
     Ok(c_path)
 }
 
-fn find_gcc() -> Option<PathBuf> {
+fn find_compiler(name: &str) -> Option<PathBuf> {
     // Check PATH first
-    if let Ok(output) = std::process::Command::new("gcc").arg("--version").output() {
+    if let Ok(output) = std::process::Command::new(name).arg("--version").output() {
         if output.status.success() {
-            return Some(PathBuf::from("gcc"));
+            return Some(PathBuf::from(name));
         }
     }
-    // Common locations on Windows
-    let candidates = vec![
-        r"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin\gcc.exe",
-        r"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin\gcc.exe",
-        r"C:\msys64\mingw64\bin\gcc.exe",
-        r"C:\msys64\mingw32\bin\gcc.exe",
-        r"C:\MinGW\bin\gcc.exe",
-        r"C:\MinGW-w64\bin\gcc.exe",
+    // For gcc, fall back to g++ if not found
+    if name == "gcc" {
+        if let Ok(output) = std::process::Command::new("g++").arg("--version").output() {
+            if output.status.success() {
+                return Some(PathBuf::from("g++"));
+            }
+        }
+    }
+    // Common locations on Windows — try both gcc and g++ executables
+    let exe_name = format!("{}.exe", name);
+    let base_dirs = vec![
+        r"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin",
+        r"C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin",
+        r"C:\msys64\mingw64\bin",
+        r"C:\msys64\mingw32\bin",
+        r"C:\MinGW\bin",
+        r"C:\MinGW-w64\bin",
     ];
-    for path in &candidates {
-        let p = PathBuf::from(path);
+    for dir in &base_dirs {
+        let p = PathBuf::from(dir).join(&exe_name);
         if p.exists() {
             return Some(p);
         }

@@ -1,0 +1,4 @@
+Program Main {
+    Print("Hello World");
+    Return 0;
+}
