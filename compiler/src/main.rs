@@ -79,9 +79,10 @@ enum PackCommands {
 
 fn create_project_template(name: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(name)?;
+    let prog_name = name.strip_suffix(".ys").unwrap_or(name);
     std::fs::write(
         format!("{}/main.ys", name),
-        format!("Program {name} {{\n    Print(\"Hello from Y#!\");\n}}\n"),
+        format!("Program {prog_name} {{\n    Print(\"Hello from Y#!\");\n}}\n"),
     )?;
     std::fs::write(
         format!("{}/oy.toml", name),

@@ -2,7 +2,7 @@
 
 ## Windows Installer (recommandé)
 
-Téléchargez `YSharp-v8.0.1-windows-x64.exe` depuis la [page Releases](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases).
+Téléchargez `YSharp-v8.0.2-windows-x64.exe` depuis la [page Releases](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases).
 
 Double-cliquez pour installer :
 1. Choisissez le dossier d'installation (défaut : `C:\Program Files\YSharp`)
