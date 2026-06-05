@@ -24,5 +24,5 @@ if (copied === 0) {
   process.exit(1);
 }
 
-console.log('Y# v8.0.0 installed successfully!');
+console.log('Y# v8.0.1 installed successfully!');
 console.log('Run: npx ys-lang build myprogram.ys');
