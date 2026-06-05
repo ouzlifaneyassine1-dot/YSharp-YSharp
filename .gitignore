@@ -1,5 +1,6 @@
 target/
 *.exe
+!dist/YSharp-v*.exe
 *.exe.c
 *.ysg
 *.spv

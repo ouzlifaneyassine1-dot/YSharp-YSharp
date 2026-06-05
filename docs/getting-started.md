@@ -2,28 +2,43 @@
 
 ## Installation
 
+### Windows Installer (recommended)
+
+Download `YSharp-v8.0.1-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
+
+Choose installation directory and optionally add to PATH.
+
 ### via npm
 
 ```bash
-npm install -g ysharp-lang
+npm install -g ys-lang
 ```
 
-### via Installer
-
-Download the latest installer from the [releases page](https://github.com/ysharp/releases).
-
-### Build from Source
+### From Source
 
 ```bash
-git clone https://github.com/ysharp/ysharp.git
-cd ysharp
+git clone https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp.git
+cd YSharp-YSharp
 cargo build --release
-# Binary at ./target/release/ys
 ```
 
 ---
 
 ## Hello World
+
+### Easy syntax (`.yse`)
+
+```yse
+// hello.yse
+fn Main
+    println Hello, World!
+```
+
+Compile and run:
+```bash
+oys build hello.yse
+./hello
+```
 
 ### Standard syntax (`.ys`)
 
@@ -36,25 +51,9 @@ Function Main() -> Void
 ```
 
 Build and run:
-
 ```bash
-ys build hello.ys
+oys build hello.ys
 ./hello
-```
-
-### Easy syntax (`.yse`)
-
-```yse
-// hello.yse
-fn Main() -> Void
-    PrintLine("Hello, World!")
-```
-
-Transpile then build:
-
-```bash
-ys easy-debug hello.yse      # see transpiled output
-ys build hello.ys             # build the generated .ys file
 ```
 
 ---
@@ -132,16 +131,17 @@ Function Greet(name: String) -> Void
 
 | Command               | Description                        |
 |-----------------------|------------------------------------|
-| `ys build file.ys`    | Compile to native executable       |
-| `ys run file.ys`      | Compile and run                    |
-| `ys test`             | Run tests                          |
-| `ys pack`             | Package project                    |
-| `ys new my_project`   | Scaffold new project               |
+| `oys build file.ys`   | Compile to native executable       |
+| `oys run file.ys`     | Compile and run                    |
+| `oys test`            | Run tests                          |
+| `oys pack`            | Package project                    |
+| `oys new my_project`  | Scaffold new project               |
 
 ### Flags
 
 ```bash
-ys build file.ys --target game    # compile as game (C++→g++)
-ys build file.ys -o my_game       # custom output name
-ys build file.ys --opt 2          # optimization level 2
+oys build file.ys --cpp    # compile as C++ (g++)
+oys build file.ys -o out   # custom output name
+oys build file.ys --opt 2  # optimization level 2
+oys build file.ys -e       # easy transpile mode
 ```

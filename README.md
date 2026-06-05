@@ -1,8 +1,8 @@
-# Y# (YSharp) v8.0.0 — Oyster Shell
+# Y# (YSharp) v8.0.1 — Oyster Shell
 
 > *Y# (pronounced "why-sharp" or "oyster") is a modern systems programming language for games, AI, and high-performance computing.*
 
-[![GitHub release](https://img.shields.io/github/v/release/ouzlifaneyassine1-dot/YSharp-YSharp)](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases/tag/v8.0.0)
+[![GitHub release](https://img.shields.io/github/v/release/ouzlifaneyassine1-dot/YSharp-YSharp)](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases/tag/v8.0.1)
 
 ---
 
@@ -31,7 +31,7 @@ Y# is a compiled, statically-typed systems language with:
 | Comments (//, /* */) | ✓ |
 | Full compiler pipeline | ✓ |
 | Y# Easy transpiler (.yse) | ✓ |
-| Windows self-extracting installer | ✓ |
+| Windows NSIS installer (choose dir + PATH) | ✓ |
 | ECS (Entity/Component/System) | Parser + HIR |
 | Actor model | Parser + HIR |
 | GPU compute (SPIR-V backend) | ✓ |
@@ -967,14 +967,13 @@ State<String> name;
 
 ### Windows Installer (recommended)
 
-Download `ys-v8.0.0-windows-x64-installer.exe` and run it.
+Download `YSharp-v8.0.1-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
 
-```
-ys-v8.0.0-windows-x64-installer.exe /S           # Silent install
-ys-v8.0.0-windows-x64-installer.exe /D=C:\ys     # Custom path
-ys-v8.0.0-windows-x64-installer.exe /NOPATH       # Skip PATH addition
-ys-v8.0.0-windows-x64-installer.exe /UNINSTALL    # Uninstall
-```
+The NSIS installer lets you:
+- Choose installation directory (default: `C:\Program Files\YSharp`)
+- Optionally add `oys`/`yo` to the system PATH
+- Create Start Menu shortcuts
+- Cleanly uninstall from Control Panel
 
 ### npm
 
@@ -997,4 +996,4 @@ cargo build --release --target x86_64-pc-windows-gnu
 
 ## License
 
-MIT — Y# v8.0.0 "Oyster Shell"
+MIT — Y# v8.0.1 "Oyster Shell"
