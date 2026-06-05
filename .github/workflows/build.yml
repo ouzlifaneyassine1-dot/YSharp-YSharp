@@ -1,0 +1,79 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            ext: ""
+            zip: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            ext: ""
+            zip: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            ext: .exe
+            zip: zip
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      run: rustup toolchain install stable --profile minimal
+
+    - name: Install MinGW (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install mingw --no-progress -y
+
+    - name: Build
+      working-directory: compiler
+      run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Prepare binaries
+      shell: bash
+      run: |
+        mkdir -p dist
+        cp compiler/target/${{ matrix.target }}/release/oys${{ matrix.ext }} dist/oys${{ matrix.ext }}
+        cp compiler/target/${{ matrix.target }}/release/yo${{ matrix.ext }} dist/yo${{ matrix.ext }}
+
+    - name: Package
+      shell: bash
+      run: |
+        cd dist
+        if [ "${{ matrix.zip }}" = "zip" ]; then
+          7z a ys-${{ github.ref_name }}-${{ matrix.target }}.zip oys${{ matrix.ext }} yo${{ matrix.ext }}
+        else
+          tar czf ys-${{ github.ref_name }}-${{ matrix.target }}.tar.gz oys${{ matrix.ext }} yo${{ matrix.ext }}
+        fi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ys-${{ github.ref_name }}-${{ matrix.target }}
+        path: dist/*
+
+    - name: Upload to release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/oys${{ matrix.ext }}
+          dist/yo${{ matrix.ext }}
+          dist/ys-${{ github.ref_name }}-${{ matrix.target }}.*
