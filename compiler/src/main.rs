@@ -236,8 +236,13 @@ fn main() {
             }
         }
         Commands::EasyDebug { file } => {
-            let src = std::fs::read_to_string(&file)
-                .map_err(|e| format!("cannot read '{}': {}", file, e)).unwrap();
+            let src = match std::fs::read_to_string(&file) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: cannot read '{}': {}", file, e);
+                    std::process::exit(1);
+                }
+            };
             let result = crate::easy::transpile(&src);
             println!("{}", result);
         }

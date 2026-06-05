@@ -75,6 +75,7 @@ pub fn unify(t1: &Type, t2: &Type, env: &mut TypeEnv) -> Result<Type, TypeError>
                     span: None,
                 });
             }
+            env.bind_type_var(*id, ty.clone());
             Ok(ty.clone())
         }
         (Type::Int, Type::Int) => Ok(Type::Int),

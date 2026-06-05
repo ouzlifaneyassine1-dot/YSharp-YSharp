@@ -157,10 +157,10 @@ fn type_params<'a>(input: &'a str) -> ParseResult<'a, Vec<Param>> {
     params(input)
 }
 
-fn many_stmt_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, Vec<AstId>> {
+fn many_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, Vec<AstId>> {
     let mut items = Vec::new();
     let mut remaining = input;
-    while let Ok((rest, item)) = stmt_inner(arena, remaining) {
+    while let Ok((rest, item)) = stmt(arena, remaining) {
         items.push(item);
         remaining = rest;
     }
@@ -198,7 +198,7 @@ fn parse_program_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<
     let (i, _) = ws(tag("{")).parse(i)?;
     let mut body_ids = Vec::new();
     let mut remaining = i;
-    while let Ok((rest, item)) = stmt_inner(arena, remaining) {
+    while let Ok((rest, item)) = stmt(arena, remaining) {
         body_ids.push(item);
         remaining = rest;
     }
@@ -230,7 +230,7 @@ pub fn parse_program(input: &str) -> Result<(AstArena, AstId), String> {
     }
 }
 
-fn stmt_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
+fn stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
     let (input, _) = skip_whitespace_and_comments(input)?;
     var_decl(arena, input)
         .or_else(|_| if_stmt(arena, input))
@@ -245,12 +245,6 @@ fn stmt_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId
         .or_else(|_| state_decl(arena, input))
         .or_else(|_| block_stmt(arena, input))
         .or_else(|_| expr_stmt(arena, input))
-}
-
-fn stmt<'a>(arena: &std::cell::RefCell<AstArena>, _input: &'a str) -> ParseResult<'a, AstId> {
-    let inner = arena.borrow_mut();
-    drop(inner);
-    panic!("use stmt_inner instead");
 }
 
 fn var_decl<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
@@ -348,7 +342,7 @@ fn expr_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId>
 
 fn block_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
     let (input, _) = ws(tag("{")).parse(input)?;
-    let (input, stmts) = many_stmt_inner(arena, input)?;
+    let (input, stmts) = many_stmt(arena, input)?;
     let (input, _) = ws(tag("}")).parse(input)?;
 
     Ok((input, arena.alloc(AstNode::Block(stmts))))
@@ -400,7 +394,7 @@ fn entity_def<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId
     let mut components = Vec::new();
     let mut remaining = input;
     loop {
-        match stmt_inner(arena, remaining) {
+        match stmt(arena, remaining) {
             Ok((rest, comp)) => {
                 components.push(comp);
                 remaining = rest;
@@ -455,7 +449,7 @@ fn actor_def<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId>
 fn view_decl<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
     let (input, _) = keyword_exact("View").parse(input)?;
     let (input, _) = ws(tag("{")).parse(input)?;
-    let (input, children) = many_stmt_inner(arena, input)?;
+    let (input, children) = many_stmt(arena, input)?;
     let (input, _) = ws(tag("}")).parse(input)?;
 
     Ok((input, arena.alloc(AstNode::View { children })))

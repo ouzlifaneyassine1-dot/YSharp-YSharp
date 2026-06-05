@@ -264,13 +264,11 @@ fn register_builtins(type_env: &mut crate::typeck::TypeEnv) {
     }
     use Type::*;
 
-    // --- I/O ---
-    builtin!("Print", [], Void);
-    builtin!("PrintLine", [], Void);
-    let p = type_env.fresh_type_var();
-    type_env.bind_fn(SmolStr::new("Print"), FunctionType { params: vec![p], ret: Void, is_differentiable: false });
-    let p = type_env.fresh_type_var();
-    type_env.bind_fn(SmolStr::new("PrintLine"), FunctionType { params: vec![p], ret: Void, is_differentiable: false });
+    // --- I/O (polymorphic: accepts any single arg) ---
+    let print_p = type_env.fresh_type_var();
+    type_env.bind_fn(SmolStr::new("Print"), FunctionType { params: vec![print_p], ret: Void, is_differentiable: false });
+    let printline_p = type_env.fresh_type_var();
+    type_env.bind_fn(SmolStr::new("PrintLine"), FunctionType { params: vec![printline_p], ret: Void, is_differentiable: false });
     builtin!("ReadLine", [], String);
     builtin!("ReadInt", [], Int);
     builtin!("ReadFloat", [], Float);

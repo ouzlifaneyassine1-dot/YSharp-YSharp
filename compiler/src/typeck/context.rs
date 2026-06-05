@@ -30,7 +30,8 @@ pub struct TypeEnv {
     vars: FxHashMap<SmolStr, Type>,
     functions: FxHashMap<SmolStr, FunctionType>,
     next_type_var: u32,
-    custom_types: FxHashMap<SmolStr, Vec<SmolStr>>, // type name -> field names
+    custom_types: FxHashMap<SmolStr, Vec<SmolStr>>,
+    type_var_bindings: FxHashMap<u32, Type>,
 }
 
 impl TypeEnv {
@@ -40,7 +41,45 @@ impl TypeEnv {
             functions: FxHashMap::default(),
             next_type_var: 0,
             custom_types: FxHashMap::default(),
+            type_var_bindings: FxHashMap::default(),
         }
+    }
+
+    /// Resolve a type by following type variable chains.
+    pub fn resolve(&self, ty: &Type) -> Type {
+        match ty {
+            Type::TypeVar(id) => {
+                match self.type_var_bindings.get(id) {
+                    Some(bound) => self.resolve(bound),
+                    None => ty.clone(),
+                }
+            }
+            Type::Tensor { element, dims } => Type::Tensor {
+                element: Box::new(self.resolve(element)),
+                dims: *dims,
+            },
+            Type::Function { params, ret } => Type::Function {
+                params: params.iter().map(|p| self.resolve(p)).collect(),
+                ret: Box::new(self.resolve(ret)),
+            },
+            Type::Optional(inner) => Type::Optional(Box::new(self.resolve(inner))),
+            Type::Generic { name, params } => Type::Generic {
+                name: name.clone(),
+                params: params.iter().map(|p| self.resolve(p)).collect(),
+            },
+            Type::Custom(name, params) => Type::Custom(
+                name.clone(),
+                params.iter().map(|p| self.resolve(p)).collect(),
+            ),
+            _ => ty.clone(),
+        }
+    }
+
+    /// Bind a type variable to a resolved type.
+    pub fn bind_type_var(&mut self, id: u32, ty: Type) {
+        // Follow the existing binding chain first
+        let resolved = self.resolve(&ty);
+        self.type_var_bindings.insert(id, resolved);
     }
 
     pub fn lookup_var(&self, name: &SmolStr) -> Option<&Type> {

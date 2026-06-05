@@ -115,28 +115,33 @@ pub fn generate(module: &CMirModule, output: &str, link_flags: &[String], opt_le
         }
         test_cmd.env("PATH", &path);
     }
-    if let Ok(s) = test_cmd.output() {
-        if s.status.success() {
-            let mut build_cmd = std::process::Command::new(&gcc_cmd);
-            build_cmd.args([opt_flag, "-flto", std_flag, "-o", &exe_path, &c_path, "-lws2_32"]);
-            if cpp_mode { build_cmd.arg("-lstdc++"); }
-            for flag in link_flags { build_cmd.arg(format!("-l{}", flag)); }
-            if let Some(ref dir) = gcc_dir {
-                let mut path = OsString::from(dir);
-                path.push(";");
-                if let Ok(existing) = std::env::var("PATH") {
-                    path.push(existing);
-                }
-                build_cmd.env("PATH", &path);
-            }
-            let r = build_cmd.status().map_err(|e| format!("{}: {}", compiler_name, e))?;
-            if r.success() {
-                let _ = std::fs::remove_file(&c_path);
-                return Ok(exe_path);
-            }
+    let compiler_available = if let Ok(s) = test_cmd.output() {
+        s.status.success()
+    } else {
+        false
+    };
+
+    if compiler_available {
+        let mut build_cmd = std::process::Command::new(&gcc_cmd);
+        build_cmd.args([opt_flag, "-flto", std_flag, "-o", &exe_path, &c_path, "-lws2_32"]);
+        if cpp_mode { build_cmd.arg("-lstdc++"); }
+        for flag in link_flags { build_cmd.arg(format!("-l{}", flag)); }
+        if let Some(ref dir) = gcc_dir {
+            let dir_str = dir.to_string_lossy();
+            let path_val = if let Ok(existing) = std::env::var("PATH") {
+                format!("{};{}", dir_str, existing)
+            } else {
+                dir_str.to_string()
+            };
+            build_cmd.env("PATH", &path_val);
+        }
+        let r = build_cmd.status().map_err(|e| format!("{}: {}", compiler_name, e))?;
+        if r.success() {
+            let _ = std::fs::remove_file(&c_path);
+            return Ok(exe_path);
         }
     }
-    Ok(c_path)
+    Err(format!("{} not found or compilation failed", compiler_name))
 }
 
 fn find_compiler(name: &str) -> Option<PathBuf> {
