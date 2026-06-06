@@ -51,6 +51,8 @@ Section "Y# Compiler (required)" SEC_CORE
   SetOutPath "$INSTDIR\bin"
   File "..\dist\oys.exe"
   File "..\dist\yo.exe"
+  SetOutPath "$INSTDIR"
+  File "..\launcher\Y# Launcher.bat"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\bin\oys.exe"
   WriteRegStr HKLM "${PRODUCT_UNINST_ROOT_KEY}\${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
@@ -74,11 +76,22 @@ Section "Start Menu Shortcuts" SEC_SHORTCUTS
   CreateShortCut "$SMPROGRAMS\Y# (YSharp)\Uninstall Y#.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 
+Section "Associate .ys/.yse files (double-click to run)" SEC_ASSOC
+  ; Register file extensions for current user (no admin needed)
+  WriteRegStr HKCU "Software\Classes\.ys" "" "YSharp.File"
+  WriteRegStr HKCU "Software\Classes\.yse" "" "YSharp.File"
+  WriteRegStr HKCU "Software\Classes\YSharp.File\shell\open\command" "" '"$INSTDIR\Y# Launcher.bat" "%1"'
+  WriteRegStr HKCU "Software\Classes\YSharp.File\DefaultIcon" "" "$INSTDIR\bin\oys.exe,0"
+  ; Notify Explorer
+  System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
+SectionEnd
+
 ; --- Section descriptions ---
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CORE} "The Y# compiler (oys.exe) and optimizer (yo.exe) - required."
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_PATH} "Add Y# binaries to the system PATH so you can run oys/yo from any command prompt."
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SHORTCUTS} "Add shortcuts to the Start Menu."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_ASSOC} "Double-click .ys/.yse files to build and run them with Y# Launcher."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; --- Installer properties ---
@@ -94,6 +107,7 @@ Section Uninstall
   Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\bin\oys.exe"
   Delete "$INSTDIR\bin\yo.exe"
+  Delete "$INSTDIR\Y# Launcher.bat"
   RMDir "$INSTDIR\bin"
   RMDir "$INSTDIR"
 
@@ -103,6 +117,11 @@ Section Uninstall
 
   Push "$INSTDIR\bin"
   Call un.RemoveFromPath
+
+  ; Remove file associations
+  DeleteRegKey HKCU "Software\Classes\.ys"
+  DeleteRegKey HKCU "Software\Classes\.yse"
+  DeleteRegKey HKCU "Software\Classes\YSharp.File"
 
   DeleteRegKey HKLM "${PRODUCT_UNINST_ROOT_KEY}\${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"

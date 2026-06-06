@@ -1,0 +1,17 @@
+Windows Registry Editor Version 5.00
+
+; Register .ys files to open with Y# Launcher
+[HKEY_CURRENT_USER\Software\Classes\.ys]
+@="YSharp.File"
+
+; Register .yse files to open with Y# Launcher
+[HKEY_CURRENT_USER\Software\Classes\.yse]
+@="YSharp.File"
+
+; Define the YSharp.File type
+[HKEY_CURRENT_USER\Software\Classes\YSharp.File\shell\open\command]
+@="\"C:\\Program Files\\YSharp\\Y# Launcher.bat\" \"%1\""
+
+; Optional: set icon from oys.exe
+[HKEY_CURRENT_USER\Software\Classes\YSharp.File\DefaultIcon]
+@="C:\\Program Files\\YSharp\\bin\\oys.exe,0"
