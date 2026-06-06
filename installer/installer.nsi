@@ -3,7 +3,7 @@
 
 Unicode True
 !define PRODUCT_NAME "Y# (YSharp)"
-!define PRODUCT_VERSION "8.0.2"
+!define PRODUCT_VERSION "8.0.4"
 !define PRODUCT_PUBLISHER "Y# Language Team"
 !define PRODUCT_WEB_SITE "https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\oys.exe"
