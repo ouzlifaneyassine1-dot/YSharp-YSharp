@@ -59,7 +59,7 @@ fn keyword<'a>(s: &'static str) -> impl Parser<&'a str, Output = &'a str, Error 
 fn keyword_exact<'a>(s: &'static str) -> impl Parser<&'a str, Output = &'a str, Error = ParseErrorInfo> {
     terminated(
         tag(s),
-        alt((multispace1, tag("("), tag("{"), tag(")"), tag("}"), tag(":"), tag(","))),
+        alt((multispace1, tag("("), tag("{"), tag(")"), tag("}"), tag(":"), tag(","), tag(";"))),
     )
 }
 
@@ -310,7 +310,8 @@ fn while_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId
 }
 
 fn loop_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
-    let (input, _) = keyword_exact("Loop").parse(input)?;
+    let (input, _) = tag("Loop").parse(input)?;
+    let (input, _) = ws(tag("(")).parse(input)?;
     let (input, var) = ident(input)?;
     let (input, _) = ws(keyword_exact("from")).parse(input)?;
     let (input, from) = expr(arena, input)?;
@@ -323,7 +324,7 @@ fn loop_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId>
 }
 
 fn return_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
-    let (input, _) = keyword_exact("Return").parse(input)?;
+    let (input, _) = tag("Return").parse(input)?;
     let (input, value) = match expr(arena, input) {
         Ok((rest, val)) => (rest, Some(val)),
         Err(nom::Err::Error(_)) => (input, None),

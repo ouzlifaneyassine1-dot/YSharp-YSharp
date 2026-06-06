@@ -1,9 +1,9 @@
-; Y# (YSharp) v8.0.2 Installer - NSIS
+; Y# (YSharp) v8.0.5 Installer — NSIS
 ; Double-click to install, choose directory, optionally add to PATH
 
 Unicode True
 !define PRODUCT_NAME "Y# (YSharp)"
-!define PRODUCT_VERSION "8.0.4"
+!define PRODUCT_VERSION "8.0.5"
 !define PRODUCT_PUBLISHER "Y# Language Team"
 !define PRODUCT_WEB_SITE "https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\oys.exe"
@@ -19,8 +19,8 @@ SetCompressor lzma
 
 ; --- Modern UI 2 settings ---
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TITLE "Welcome to Y# (YSharp) v8.0.1 Setup"
-!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through installing Y# (YSharp) v8.0.1.$\r$\n$\r$\nY# is a programming language that compiles to C.$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TITLE "Welcome to Y# (YSharp) v8.0.5 Setup"
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through installing Y# (YSharp) v8.0.5.$\r$\n$\r$\nY# is a modern systems language with ECS, GPU compute, autodiff, and actor model support.$\r$\n$\r$\nClick Next to continue."
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_HEADERIMAGE

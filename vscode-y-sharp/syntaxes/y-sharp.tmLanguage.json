@@ -1,0 +1,52 @@
+{
+  "name": "Y#",
+  "scopeName": "source.ys",
+  "fileTypes": ["ys"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#builtins" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "match": "//.*", "name": "comment.line.double-slash.ys" },
+        { "begin": "/\\*", "end": "\\*/", "name": "comment.block.ys" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        { "begin": "\"", "end": "\"", "name": "string.quoted.double.ys" }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        { "match": "\\b[0-9]+(\\.[0-9]+)?\\b", "name": "constant.numeric.ys" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "match": "\\b(Program|Function|Return|If|Else|Loop|While|For|var|let|const|async|differentiable|null|true|false|Entity|Component|System|Actor|On|View|State|Reply|ForEach)\\b", "name": "keyword.control.ys" }
+      ]
+    },
+    "types": {
+      "patterns": [
+        { "match": "\\b(Int|Float|Bool|String|Void|Null)\\b", "name": "storage.type.ys" }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        { "match": "\\b(Print|PrintLine|ReadLine|ReadInt|ReadFloat|ReadAllText|WriteAllText|AppendAllText|FileExists|FileDelete|FileCopy|FileMove|FileSize|DirCreate|DirDelete|DirExists|DirList|GetCurrentDir|SetCurrentDir|ClearScreen|CursorPos|GetCursorX|GetCursorY|SetColor|ReadKey|ExitF|SleepF|Exec|ExecOutput|GetEnv|SetEnv|GetOS|GetPID|GetUserName|GetHostName|GetCPUCount|NowUnix|NowMillis|NowString|DateString|TimeString|Year|Month|Day|Hour|Minute|Second|StringLen|StringSub|StringSplit|StringContains|StringReplace|StringTrim|StringTrimLeft|StringTrimRight|StringToUpper|StringToLower|StringStartsWith|StringEndsWith|StringAt|StringPadLeft|StringPadRight|ToInt|ToFloat|ToString|ParseInt|ParseFloat|Format|IntToStr|FloatToStr|BoolToStr|StrToInt|StrToFloat|CharCode|CodeChar|Abs|AbsF|Min|MinF|Max|MaxF|Clamp|ClampF|Sin|Cos|Tan|Asin|Acos|Atan|Atan2|Sqrt|Pow|Exp|Log|Log2|Log10|Floor|Ceil|Round|Trunc|Frac|Sign|SignF|Lerp|Random|RandomRange|RandomInt|SeedRandom|DegToRad|RadToDeg|Hypot|MemoryAddress|MemorySize|StackAlloc|StackFree|CopyMem_|CompareMemory|SetMemory|RunProcess|KillProcess|ProcessExists|WaitProcess|HttpGet|HttpPost|HttpGetJson|HttpPostJson|DownloadFile|PingHost|ResolveHost|TypeOf|IsInt|IsFloat|IsString|IsBool|SeedRandom|NowMillis)\\b", "name": "support.function.ys" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "match": "==|!=|<=|>=|&&|\\|\\||[-+*/%=<>!]", "name": "keyword.operator.ys" }
+      ]
+    }
+  }
+}

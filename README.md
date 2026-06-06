@@ -1,8 +1,8 @@
-# Y# (YSharp) v8.0.2 — Oyster Shell
+# Y# (YSharp) v8.0.5 — Oyster Shell
 
 > *Y# (pronounced "why-sharp" or "oyster") is a modern systems programming language for games, AI, and high-performance computing.*
 
-[![GitHub release](https://img.shields.io/github/v/release/ouzlifaneyassine1-dot/YSharp-YSharp)](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases/tag/v8.0.2)
+[![GitHub release](https://img.shields.io/github/v/release/ouzlifaneyassine1-dot/YSharp-YSharp)](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases/tag/v8.0.5)
 
 ---
 
@@ -27,6 +27,7 @@ Y# is a compiled, statically-typed systems language with:
 | Numeric Loop (Loop i from x to y) | ✓ |
 | While loops | ✓ |
 | Functions with params + return types | ✓ |
+| Function parameter passing (v8.0.5 fix) | ✓ |
 | Binary/unary expressions | ✓ |
 | Comments (//, /* */) | ✓ |
 | Full compiler pipeline | ✓ |
@@ -878,6 +879,7 @@ State<String> name;
 | `StringLiteral` | String constant |
 | `BoolLiteral` | Boolean constant |
 | `Phi` | SSA phi node |
+| `Param` | Load function parameter by index |
 | `Print` | Polymorphic print intrinsic |
 | `VectorHint` | SIMD vectorization hint |
 | `InlineHint` | Inline hint |
@@ -969,7 +971,7 @@ State<String> name;
 
 ### Windows Installer (recommended)
 
-Download `YSharp-v8.0.4-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
+Download `YSharp-v8.0.5-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
 
 The NSIS installer lets you:
 - Choose installation directory (default: `C:\Program Files\YSharp`)
@@ -999,4 +1001,4 @@ cargo build --release --target x86_64-pc-windows-gnu
 
 ## License
 
-MIT — Y# v8.0.2 "Oyster Shell"
+MIT — Y# v8.0.5 "Oyster Shell"

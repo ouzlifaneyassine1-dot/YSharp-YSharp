@@ -364,6 +364,12 @@ fn convert_inst(inst: &MirInst) -> GameMirInst {
                 args: vec![SmolStr::new(arg.to_string())],
             }
         }
+        MirInst::Param { dest, index } => {
+            GameMirInst::Load {
+                dest: SmolStr::new(dest.to_string()),
+                src: SmolStr::new(format!("p{}", index)),
+            }
+        }
         MirInst::VectorHint { .. } | MirInst::InlineHint { .. } => {
             GameMirInst::Placeholder
         }

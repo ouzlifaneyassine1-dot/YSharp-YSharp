@@ -1,0 +1,44 @@
+{
+  "name": "y-sharp",
+  "displayName": "Y# (YSharp)",
+  "description": "Y# language support — syntax highlighting for .ys and .yse files",
+  "version": "8.0.5",
+  "publisher": "ys-lang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "y-sharp",
+        "aliases": ["Y#", "YSharp", "y-sharp"],
+        "extensions": [".ys"],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "y-sharp-easy",
+        "aliases": ["Y# Easy", "YSharp Easy", "y-sharp-easy"],
+        "extensions": [".yse"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "y-sharp",
+        "scopeName": "source.ys",
+        "path": "./syntaxes/y-sharp.tmLanguage.json"
+      },
+      {
+        "language": "y-sharp-easy",
+        "scopeName": "source.yse",
+        "path": "./syntaxes/y-sharp-easy.tmLanguage.json"
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
 extern int8_t _ys_retbuf[65536];
 
 // --- Print (keep original signatures for backward compat) ---
-int64_t _ys_print_str(const int8_t* s) { printf("%s", (const char*)s); return 0; }
+int64_t _ys_print_str(int64_t s) { printf("%s", (const char*)(intptr_t)s); return 0; }
 int64_t _ys_print_int(int64_t v) { printf("%lld", (long long)v); return 0; }
 int64_t _ys_print_float(double v) { printf("%g", v); return 0; }
 int64_t _ys_print_newline() { printf("\n"); return 0; }

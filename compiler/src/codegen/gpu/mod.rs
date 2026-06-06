@@ -615,6 +615,7 @@ fn convert_inst(inst: &MirInst) -> GpuMirInst {
             rhs: SmolStr::new("0.0"),
         },
         MirInst::Phi { .. } => GpuMirInst::Placeholder,
+        MirInst::Param { .. } => GpuMirInst::Placeholder,
         MirInst::Unary { dest, op, operand } => GpuMirInst::FAdd {
             dest: SmolStr::new(dest.to_string()),
             lhs: SmolStr::new(match op { MirUnaryOp::Neg => "0", MirUnaryOp::Not => "~0" }),

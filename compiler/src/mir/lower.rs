@@ -126,15 +126,15 @@ impl MirBuilder {
 
         // Declare parameters
         let mut mir_params = Vec::with_capacity(hir_fn.params.len());
-        for param in &hir_fn.params {
+        for (i, param) in hir_fn.params.iter().enumerate() {
             let mir_ty = lower_type(&param.ty);
             let ptr = self.declare_var(&param.name, &mir_ty);
-            // Store incoming parameter value to alloca
+            // Load the actual parameter value from the C function param pN
             let param_val = self.fresh_val();
-            self.emit(MirInst::IntLiteral {
+            self.emit(MirInst::Param {
                 dest: param_val,
-                val: 0,
-            }); // placeholder — real arg passing would set this
+                index: i as u32,
+            });
             self.emit(MirInst::Store {
                 dest: ptr,
                 src: param_val,

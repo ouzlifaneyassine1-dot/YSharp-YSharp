@@ -160,6 +160,7 @@ fn inst_dest(inst: &MirInst) -> Option<MirValue> {
         MirInst::StringLiteral { dest, .. } => Some(*dest),
         MirInst::BoolLiteral { dest, .. } => Some(*dest),
         MirInst::Phi { dest, .. } => Some(*dest),
+        MirInst::Param { dest, .. } => Some(*dest),
         MirInst::VectorHint { .. } => None,
         MirInst::InlineHint { dest, .. } => *dest,
     }
@@ -223,6 +224,7 @@ fn rewrite_inst(inst: &mut MirInst, replaced: &FxHashMap<u32, MirValue>) {
         | MirInst::FloatLiteral { .. }
         | MirInst::StringLiteral { .. }
         | MirInst::BoolLiteral { .. }
+        | MirInst::Param { .. }
         | MirInst::VectorHint { .. }
         | MirInst::InlineHint { .. } => {}
     }

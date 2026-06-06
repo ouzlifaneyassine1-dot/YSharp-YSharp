@@ -303,8 +303,9 @@ fn is_hoistable(
         // Loads from loop-invariant pointers could be hoisted, but be conservative
         MirInst::Load { src, .. } => invariant_dests.contains(&src.0),
 
-        // Stores, calls, prints, phis, allocas are not hoistable
+        // Stores, calls, prints, phis, allocas, params are not hoistable
         MirInst::Store { .. } | MirInst::Call { .. } | MirInst::Print { .. } | MirInst::Phi { .. } | MirInst::Alloca { .. }
+        | MirInst::Param { .. }
         | MirInst::VectorHint { .. } | MirInst::InlineHint { .. } => {
             false
         }

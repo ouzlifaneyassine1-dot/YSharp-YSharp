@@ -171,6 +171,11 @@ pub enum MirInst {
         dest: MirValue,
         incoming: Vec<(MirValue, usize)>,
     },
+    /// Load a function parameter by index
+    Param {
+        dest: MirValue,
+        index: u32,
+    },
     /// Vectorization hint: marks a loop for SIMD codegen
     VectorHint {
         width: u32,

@@ -132,6 +132,10 @@ fn mir_to_cmir_inst(inst: &MirInst, vreg_map: &mut impl FnMut(MirValue) -> SmolS
             dest: vreg_map(*dest),
             src: incoming.first().map(|(v, _)| vreg_map(*v)).unwrap_or_default(),
         },
+        MI::Param { dest, index } => c_backend::CMirInst::Load {
+            dest: vreg_map(*dest),
+            src: SmolStr::new(format!("p{}", index)),
+        },
         MI::Unary { dest, op, operand } => c_backend::CMirInst::Binary {
             dest: vreg_map(*dest),
             op: match op {

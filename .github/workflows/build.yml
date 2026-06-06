@@ -69,12 +69,11 @@ jobs:
         name: ys-${{ github.ref_name }}-${{ matrix.target }}
         path: dist/*
 
-    - name: Build MSI (Windows only)
+    - name: Build NSIS installer (Windows only)
       if: matrix.os == 'windows-latest' && startsWith(github.ref, 'refs/tags/v')
       run: |
-        choco install wixtoolset --no-progress -y
-        cd installer
-        .\build-msi.bat
+        choco install nsis --no-progress -y
+        & "C:\Program Files (x86)\NSIS\makensis.exe" installer\installer.nsi
 
     - name: Upload to release
       if: startsWith(github.ref, 'refs/tags/v')
@@ -84,4 +83,4 @@ jobs:
           dist/oys${{ matrix.ext }}
           dist/yo${{ matrix.ext }}
           dist/ys-${{ github.ref_name }}-${{ matrix.target }}.*
-          dist/YSharp-${{ github.ref_name }}-windows-x64.msi
+          dist/YSharp-${{ github.ref_name }}-windows-x64.exe

@@ -44,7 +44,7 @@ pub fn generate(module: &CMirModule, output: &str, link_flags: &[String], opt_le
     out.push_str("int8_t _ys_retbuf[65536];\n\n");
 
     // Forward declarations for runtime built-ins (needed before user code)
-    out.push_str("int64_t _ys_print_str(const int8_t* s);\n");
+    out.push_str("int64_t _ys_print_str(int64_t s);\n");
     out.push_str("int64_t _ys_print_int(int64_t v);\n");
     out.push_str("int64_t _ys_print_float(double v);\n");
     out.push_str("int64_t _ys_print_newline();\n\n");
@@ -69,16 +69,16 @@ pub fn generate(module: &CMirModule, output: &str, link_flags: &[String], opt_le
         out.push('\n');
     }
 
+    // Emit runtime function implementations (built-in stubs) — before user code
+    out.push_str(include_str!("runtime.c"));
+    out.push('\n');
+
     // Emit function definitions
     for func in &module.functions {
         if func.blocks.is_empty() { continue; }
         out.push_str(&emit_c_function(func, &module.string_literals));
         out.push('\n');
     }
-
-    // Emit runtime function implementations (built-in stubs)
-    out.push_str(include_str!("runtime.c"));
-    out.push('\n');
 
     std::fs::write(&c_path, &out).map_err(|e| format!("failed to write C: {}", e))?;
 
@@ -228,7 +228,13 @@ fn emit_c_function(func: &CMirFunction, string_literals: &[(SmolStr, SmolStr)]) 
 
     // Declare alloca'd variables with their explicit types
     for (dest, ty) in &alloca_types {
-        out.push_str(&format!("    {} {};\n", emit_c_type(ty), dest));
+        // String literals are stored as int64_t (pointer cast) to avoid type mismatch
+        let is_str_lit = string_literals.iter().any(|(vreg, _)| vreg == dest);
+        if is_str_lit {
+            out.push_str(&format!("    int64_t {};\n", dest));
+        } else {
+            out.push_str(&format!("    {} {};\n", emit_c_type(ty), dest));
+        }
     }
     // Declare other variables (non-alloca) as int64_t
     for v in &all_vars {
@@ -256,7 +262,7 @@ fn emit_c_inst(inst: &CMirInst, string_literals: &[(SmolStr, SmolStr)]) -> Strin
             // If this alloca corresponds to a string literal, initialize with the string constant
             for (idx, (vreg, _)) in string_literals.iter().enumerate() {
                 if vreg == dest {
-                    return format!("{} = (int8_t*)_s{};", dest, idx);
+                    return format!("{} = (int64_t)(intptr_t)_s{};", dest, idx);
                 }
             }
             format!("{} = 0;", dest)

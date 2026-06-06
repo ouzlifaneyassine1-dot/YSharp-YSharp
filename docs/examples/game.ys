@@ -1,26 +1,39 @@
-Program GameDemo {
-    Entity Player {
-        Transform(x: 0, y: 0, z: 0)
-        RigidBody(mass: 1.0)
-        Mesh("player.glb")
-    }
-    
-    Entity Camera {
-        Transform(x: 0, y: 5, z: -10)
-        Camera(fov: 60)
-    }
-    
-    System Movement(dt) {
-        If (Input.KeyDown("W")) {
-            Player.position.z -= 5 * dt
+Program GuessingGame {
+    SeedRandom(NowMillis());
+    var secret = RandomInt(1, 100);
+
+    PrintLine("=== Y# Number Guessing Game ===");
+    Print("Secret number: ");
+    PrintLine(secret);
+
+    Function CheckGuess(guess, secret) {
+        if (guess < secret) {
+            PrintLine("Too low!")
+        } else {
+            if (guess > secret) {
+                PrintLine("Too high!")
+            } else {
+                PrintLine("Correct!")
+            }
         }
-        If (Input.KeyDown("S")) {
-            Player.position.z += 5 * dt
+    }
+
+    Loop (i from 1 to 7) {
+        var guess = RandomInt(1, 100);
+        Print("Guess ");
+        Print(i);
+        Print(": ");
+        Print(guess);
+        Print(" — ");
+        CheckGuess(guess, secret);
+        if (guess == secret) {
+            Print("Found in ");
+            Print(i);
+            PrintLine(" attempts!");
+            Return;
         }
     }
-    
-    Compute(PostProcess) {
-        Trace(ray from Camera.position, direction: Camera.forward)
-        Shade(material: "standard", light: sunLight)
-    }
+
+    Print("Out of attempts! Number was ");
+    PrintLine(secret)
 }

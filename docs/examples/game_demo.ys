@@ -1,61 +1,74 @@
-// Y# Game Demo — complete ECS-based game loop
-Import "std/core/io"
-Import "std/core/math"
-Import "std/game/ecs"
-Import "std/game/physics"
+Program GameDemo {
+    SeedRandom(NowMillis());
 
-Function Main() {
-    PrintLine("=== Y# Game Demo ===")
-    
-    // Create player entity with components
-    Var player = CreateEntity("Player")
-    AddComponent(player, Transform { x: 0, y: 0, z: 0, rotation: 0, scale: 1 })
-    AddComponent(player, RigidBody { velocity: Vec3(0, 0, 0), mass: 1, drag: 0.1, useGravity: True })
-    AddComponent(player, Mesh { path: "models/player.obj", material: "player_mat" })
-    AddComponent(player, Camera { fov: 70, near: 0.1, far: 1000, clearColor: "#87CEEB" })
-    
-    // Create enemy entities
-    For i = 0 To 10 {
-        Var enemy = CreateEntity("Enemy_" + ToString(i))
-        Var x = RandomRange(-20, 20)
-        Var z = RandomRange(-20, 20)
-        AddComponent(enemy, Transform { x: x, y: 0, z: z, rotation: 0, scale: 1 })
-        AddComponent(enemy, RigidBody { velocity: Vec3(0, 0, 0), mass: 2, drag: 0.05, useGravity: True })
-        AddComponent(enemy, Mesh { path: "models/enemy.obj", material: "enemy_mat" })
-        AddComponent(enemy, Collider { radius: 0.5, height: 1.8, isTrigger: False })
+    Function EnemyHP(level) {
+        var base = 20 + level * 10;
+        Return base;
     }
-    
-    // Movement system: updates every entity with Transform + RigidBody
-    On("update", Function(dt) {
-        ForEachMulti(["Transform", "RigidBody"], Function(entity) {
-            Var t = GetComponent(entity, Transform)
-            Var rb = GetComponent(entity, RigidBody)
-            
-            // Apply gravity
-            If rb.useGravity {
-                rb.velocity = Vec3Add(rb.velocity, Vec3(0, -9.81 * dt, 0))
+
+    Function SimulateBattle(level) {
+        var hp = EnemyHP(level);
+        var playerHP = 50;
+
+        PrintLine("=== Battle Level ===");
+        Print("Level: ");
+        PrintLine(level);
+        Print("Enemy HP: ");
+        Print(hp);
+        Print("  Your HP: ");
+        PrintLine(playerHP);
+
+        Loop (turn from 0 to 19) {
+            var playerDmg = RandomInt(8, 20);
+            var enemyDmg = RandomInt(3, 5 + level * 2);
+            var playerHeal = RandomInt(10, 25);
+
+            if (hp <= playerDmg) {
+                Print("You strike for ");
+                Print(playerDmg);
+                PrintLine(" — Enemy defeated!");
+                Return;
             }
-            // Apply drag
-            rb.velocity = Vec3Scale(rb.velocity, 1 - rb.drag * dt)
-            
-            // Update position
-            t.x = t.x + rb.velocity.x * dt
-            t.y = t.y + rb.velocity.y * dt
-            t.z = t.z + rb.velocity.z * dt
-        })
-    })
-    
-    // Collision system
-    On("collision", Function(a, b) {
-        PrintLine("Collision detected!")
-        Emit("audio_play", "explosion.wav")
-    })
-    
-    // Game loop (60 FPS)
-    For frame = 0 To 1000 {
-        Emit("update", 1.0 / 60.0)
-        Emit("render", Null)
+
+            hp = hp - playerDmg;
+            var turnNum = turn + 1;
+            Print("Turn ");
+            Print(turnNum);
+            Print(": You hit for ");
+            Print(playerDmg);
+            Print("  [Enemy: ");
+            Print(hp);
+            PrintLine(" HP]");
+
+            playerHP = playerHP - enemyDmg;
+
+            if (playerHP <= 0) {
+                Print("Enemy hits for ");
+                Print(enemyDmg);
+                PrintLine(" — You are defeated!");
+                Return;
+            }
+
+            if (playerHP < 20) {
+                playerHP = playerHP + playerHeal;
+                Print("You heal ");
+                Print(playerHeal);
+                Print(" HP [Your HP: ");
+                Print(playerHP);
+                PrintLine("]")
+            } else {
+                Print("Enemy hits for ");
+                Print(enemyDmg);
+                Print(" [Your HP: ");
+                Print(playerHP);
+                PrintLine("]")
+            }
+        }
     }
-    
-    PrintLine("Game demo complete!")
+
+    PrintLine("=== Y# RPG Battle Simulator ===");
+    SimulateBattle(1);
+    SimulateBattle(2);
+    SimulateBattle(3);
+    PrintLine("Victory!")
 }

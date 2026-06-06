@@ -1,16 +1,19 @@
-// Y# Hello World — minimal intro
-Import "std/core/io"
+Program Hello {
+    var a = 42;
+    var b = 7;
+    var sum = a + b;
+    var product = a * b;
 
-Function Main() {
-    PrintLine("Hello from Y#!")
-    
-    Var name = ReadLine()
-    Print("Welcome, ")
-    PrintLine(name)
-    
-    // Simple math
-    Var a = 42
-    Var b = 7
-    PrintLine("42 + 7 = " + ToString(a + b))
-    PrintLine("42 * 7 = " + ToString(a * b))
+    PrintLine("=== Y# Hello World ===");
+    Print("42 + 7 = ");
+    PrintLine(sum);
+    Print("42 * 7 = ");
+    PrintLine(product);
+
+    var x = 100;
+    var y = x - 58;
+    Print("100 - 58 = ");
+    PrintLine(y);
+
+    PrintLine("Goodbye!")
 }
