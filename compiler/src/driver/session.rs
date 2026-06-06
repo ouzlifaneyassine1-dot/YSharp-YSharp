@@ -70,8 +70,17 @@ impl<'a> Session<'a> {
         opt_level: &str,
         cpp_mode: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let raw_source = std::fs::read_to_string(file)
+        let mut raw_source = std::fs::read_to_string(file)
             .map_err(|e| format!("cannot read source '{}': {}", file, e))?;
+
+        // Strip Unix shebang (#!/path/to/interpreter) before lexing/parsing
+        if raw_source.starts_with("#!") {
+            if let Some(end) = raw_source.find('\n') {
+                raw_source = raw_source[end + 1..].to_string();
+            } else {
+                raw_source = String::new();
+            }
+        }
 
         // Auto-detect Y# Easy by extension or --easy flag
         let is_easy = easy || file.ends_with(".yse");
