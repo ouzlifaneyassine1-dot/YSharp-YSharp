@@ -31,7 +31,9 @@ Y# is a compiled, statically-typed systems language with:
 | Comments (//, /* */) | ✓ |
 | Full compiler pipeline | ✓ |
 | Y# Easy transpiler (.yse) | ✓ |
-| Windows NSIS installer (choose dir + PATH) | ✓ |
+| Windows NSIS installer (dir + PATH + file association) | ✓ |
+| Double-click .ys/.yse to build & run (Python-like) | ✓ |
+| Unix shebang (#!) support | ✓ |
 | ECS (Entity/Component/System) | Parser + HIR |
 | Actor model | Parser + HIR |
 | GPU compute (SPIR-V backend) | ✓ |
@@ -967,11 +969,12 @@ State<String> name;
 
 ### Windows Installer (recommended)
 
-Download `YSharp-v8.0.2-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
+Download `YSharp-v8.0.4-windows-x64.exe` from the [Releases page](https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp/releases) and double-click.
 
 The NSIS installer lets you:
 - Choose installation directory (default: `C:\Program Files\YSharp`)
 - Optionally add `oys`/`yo` to the system PATH
+- Associate `.ys`/`.yse` files (double-click to build & run, like Python)
 - Create Start Menu shortcuts
 - Cleanly uninstall from Control Panel
 

@@ -67,14 +67,15 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 echo.
-echo ==^> Running %FILE%...
-set EXEFILE=%~dpn1.exe
-if exist "%EXEFILE%" (
-    "%EXEFILE%"
-) else if exist "%~dp0%~n1.exe" (
-    "%~dp0%~n1.exe"
+echo ==^> Running output.exe...
+if exist "output.exe" (
+    "output.exe"
+) else if exist "%~dp0output.exe" (
+    "%~dp0output.exe"
 ) else (
-    "%~n1.exe"
+    echo Error: output.exe not found
+    pause
+    exit /b 1
 )
 echo.
 echo Program exited with code %ERRORLEVEL%
