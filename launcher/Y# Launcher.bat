@@ -1,5 +1,5 @@
 @echo off
-title Y# (YSharp) Launcher v8.0.3
+title Y# (YSharp) Launcher v8.0.5
 color 0B
 
 :: Find oys.exe
@@ -18,7 +18,7 @@ if not "%~1"=="" goto buildrun
 :menu
 cls
 echo.
-echo   Y# (YSharp) v8.0.3 Launcher
+echo   Y# (YSharp) v8.0.5 Launcher
 echo   ============================
 echo.
 echo   Commands:
@@ -85,7 +85,7 @@ exit /b %ERRORLEVEL%
 :prompt
 echo.
 echo Opening Y# command prompt...
-start "Y# Command Prompt" cmd /K "echo Y# (YSharp) v8.0.3 — type oys help to begin"
+start "Y# Command Prompt" cmd /K "echo Y# (YSharp) v8.0.5 — type oys help to begin"
 goto menu
 
 :newproj

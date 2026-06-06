@@ -79,14 +79,17 @@ enum PackCommands {
 
 fn create_project_template(name: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(name)?;
-    let prog_name = name.strip_suffix(".ys").unwrap_or(name);
+    let prog_name = std::path::Path::new(name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("Main");
     std::fs::write(
         format!("{}/main.ys", name),
         format!("Program {prog_name} {{\n    Print(\"Hello from Y#!\");\n}}\n"),
     )?;
     std::fs::write(
         format!("{}/oy.toml", name),
-        format!("[project]\nname = \"{name}\"\nversion = \"0.1.0\"\ntarget = \"native\"\n"),
+        format!("[project]\nname = \"{}\"\nversion = \"0.1.0\"\ntarget = \"native\"\n", name),
     )?;
     Ok(())
 }
@@ -251,7 +254,7 @@ fn main() {
             std::fs::create_dir_all(&name).expect("failed to create project dir");
             create_project_template(&name).expect("failed to create project");
             eprintln!("Created new Y# project '{}'", name);
-            eprintln!("  cd {} && oys build main.ys", name);
+            eprintln!("  cd \"{}\" && oys build main.ys", name);
         }
     }
 }
