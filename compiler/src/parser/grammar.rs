@@ -212,6 +212,16 @@ fn parse_program_inner<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<
 }
 
 pub fn parse_program(input: &str) -> Result<(AstArena, AstId), String> {
+    // Strip shebang (#!/path/to/interpreter) for Unix-like execution
+    let input = if let Some(rest) = input.strip_prefix("#!") {
+        if let Some(end) = rest.find('\n') {
+            &rest[end + 1..]
+        } else {
+            ""
+        }
+    } else {
+        input
+    };
     let mut arena = AstArena::new();
     let result = parse_program_inner(&mut arena, input);
     match result {
