@@ -12,19 +12,33 @@
   "engines": {
     "vscode": "^1.96.0"
   },
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
   "contributes": {
     "languages": [
       {
         "id": "y-sharp",
-        "aliases": ["Y#", "YSharp", "y-sharp"],
-        "extensions": [".ys"],
+        "aliases": [
+          "Y#",
+          "YSharp",
+          "y-sharp"
+        ],
+        "extensions": [
+          ".ys"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
         "id": "y-sharp-easy",
-        "aliases": ["Y# Easy", "YSharp Easy", "y-sharp-easy"],
-        "extensions": [".yse"],
+        "aliases": [
+          "Y# Easy",
+          "YSharp Easy",
+          "y-sharp-easy"
+        ],
+        "extensions": [
+          ".yse"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -40,5 +54,8 @@
         "path": "./syntaxes/y-sharp-easy.tmLanguage.json"
       }
     ]
+  },
+  "dependencies": {
+    "@vscode/vsce": "^3.9.2"
   }
 }
