@@ -1,0 +1,41 @@
+{
+  "name": "ysharp-ide",
+  "version": "8.1.0",
+  "description": "Y# IDE — Modern code editor with AI agents",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "npx electron-builder --win --x64",
+    "pack": "npx electron-builder --win --x64 --dir"
+  },
+  "author": "Y# Language Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.52.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "build": {
+    "appId": "org.ysharp.ide",
+    "productName": "Y# IDE",
+    "directories": { "output": "../dist/ide" },
+    "files": [
+      "main.js",
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "../icon.ico"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "../icon.ico"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+Program Main {
+    Function main() {
+        PrintLine(10 - 3);
+        PrintLine(100 - 50 - 20);
+        PrintLine(-5);
+        PrintLine(-(10 - 3));
+    }
+}

@@ -6,7 +6,7 @@ color 0B
 set OYS_CMD=oys
 where oys.exe >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    if exist "C:\Program Files\YSharp\bin\oys.exe" set OYS_CMD="C:\Program Files\YSharp\bin\oys.exe"
+    if exist "%LOCALAPPDATA%\Programs\YSharp\bin\oys.exe" set OYS_CMD="%LOCALAPPDATA%\Programs\YSharp\bin\oys.exe"
     if exist "%~dp0oys.exe" set OYS_CMD="%~dp0oys.exe"
     if exist "%~dp0bin\oys.exe" set OYS_CMD="%~dp0bin\oys.exe"
 )

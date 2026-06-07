@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:* https://*; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data:;">
+<title>Y# IDE</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+</head>
+<body>
+  <div id="titlebar">
+    <div id="titlebar-drag">
+      <span id="titlebar-icon">◇</span>
+      <span id="titlebar-text">Y# IDE v8.1.0</span>
+    </div>
+    <div id="titlebar-controls">
+      <button class="tb-btn" onclick="ysharp.window.minimize()">─</button>
+      <button class="tb-btn" onclick="ysharp.window.maximize()">□</button>
+      <button class="tb-btn tb-close" onclick="ysharp.window.close()">✕</button>
+    </div>
+  </div>
+
+  <div id="layout">
+    <div id="sidebar">
+      <button class="sb-btn active" data-panel="explorer" title="Explorer">📁</button>
+      <button class="sb-btn" data-panel="search" title="Search">🔍</button>
+      <div class="sb-spacer"></div>
+      <button class="sb-btn" data-panel="ai-agent" title="AI Agent">🤖</button>
+      <button class="sb-btn" data-panel="tasks" title="Tasks">☑</button>
+      <button class="sb-btn" data-panel="packages" title="Packages">📦</button>
+      <div class="sb-spacer"></div>
+      <button class="sb-btn" data-panel="settings" title="Settings">⚙</button>
+    </div>
+
+    <div id="panel-container">
+      <div id="panel-explorer" class="panel active">
+        <div class="panel-header">
+          <span>EXPLORER</span>
+          <div class="panel-actions">
+            <button onclick="openFolder()" title="Open Folder">📂</button>
+            <button onclick="newFile()" title="New File">+</button>
+          </div>
+        </div>
+        <div id="explorer-tree" class="panel-body"></div>
+      </div>
+
+      <div id="panel-ai-agent" class="panel">
+        <div class="panel-header">
+          <span>🤖 AI AGENT</span>
+          <select id="ai-provider" onchange="switchAIProvider()">
+            <option value="ollama">Local (Ollama/Gemma 4)</option>
+            <option value="bigpickle">Cloud (BIG PICKLE)</option>
+            <option value="openai">OpenAI Compatible</option>
+          </select>
+        </div>
+        <div id="ai-chat">
+          <div id="ai-messages"></div>
+          <div id="ai-input-bar">
+            <textarea id="ai-input" placeholder="Ask the AI agent to write code, install packages, fix bugs, or explain..." rows="2"></textarea>
+            <button id="ai-send" onclick="sendAIMessage()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-tasks" class="panel">
+        <div class="panel-header">
+          <span>☑ TASKS / CHECKLIST</span>
+          <button onclick="addTask()" title="Add Task">+</button>
+        </div>
+        <div class="panel-body">
+          <div id="task-list"></div>
+          <div class="task-add-bar">
+            <input id="task-input" placeholder="New task..." onkeydown="if(event.key==='Enter')addTask()" />
+            <button onclick="addTask()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-packages" class="panel">
+        <div class="panel-header">
+          <span>📦 PACKAGE MANAGER</span>
+          <button onclick="pkgList()" title="List packages">📋</button>
+        </div>
+        <div class="panel-body">
+          <div id="pkg-input-bar">
+            <input id="pkg-input" placeholder="yo install &lt;package&gt; or yo list" onkeydown="if(event.key==='Enter')runPkgCmd()" />
+            <button onclick="runPkgCmd()">Run</button>
+          </div>
+          <div id="pkg-output">Ready.</div>
+        </div>
+      </div>
+
+      <div id="panel-settings" class="panel">
+        <div class="panel-header"><span>⚙ SETTINGS</span></div>
+        <div class="panel-body" id="settings-body"></div>
+      </div>
+    </div>
+
+    <div id="main-area">
+      <div id="tabs-bar"><div id="tabs-container"></div></div>
+      <div id="editor-container"></div>
+      <div id="terminal-container">
+        <div id="terminal-header">
+          <span>TERMINAL</span>
+          <div>
+            <button onclick="clearTerminal()" title="Clear">⊘</button>
+            <button onclick="spawnTerminal()" title="New Terminal">+</button>
+          </div>
+        </div>
+        <div id="terminal"></div>
+      </div>
+    </div>
+
+    <div id="statusbar">
+      <span id="sb-lang">Y#</span>
+      <span id="sb-encoding">UTF-8</span>
+      <span id="sb-cursor">Ln 1, Col 1</span>
+      <span id="sb-ai-status">🤖 AI: Initializing...</span>
+      <span id="sb-git">⎇ main</span>
+    </div>
+  </div>
+
+  <!-- Monaco and xterm from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
