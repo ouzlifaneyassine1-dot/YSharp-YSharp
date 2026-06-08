@@ -22,6 +22,8 @@ pub struct MirBuilder {
     /// Block stack for control flow (loops, if-else).
     break_targets: Vec<usize>,
     continue_targets: Vec<usize>,
+    /// Known function return types for local functions.
+    fn_ret_types: FxHashMap<SmolStr, MirType>,
 }
 
 impl MirBuilder {
@@ -34,6 +36,7 @@ impl MirBuilder {
             cfg: ControlFlowGraph::new(),
             break_targets: Vec::new(),
             continue_targets: Vec::new(),
+            fn_ret_types: FxHashMap::default(),
         }
     }
 
@@ -111,14 +114,55 @@ impl MirBuilder {
             HirNode::FloatLiteral(_) => MirType::Float,
             HirNode::BoolLiteral(_) => MirType::Bool,
             HirNode::Identifier(name) => {
-                self.var_types.get(name).cloned().unwrap_or(MirType::String)
+                self.var_types.get(name).cloned().or_else(|| {
+                    self.fn_ret_types.get(name).cloned()
+                }).unwrap_or(MirType::Int)
             }
-            _ => MirType::String,
+            HirNode::Call { callee, args: _ } => {
+                self.fn_ret_types.get(callee).cloned().unwrap_or(MirType::Int)
+            }
+            HirNode::Binary { op, left, right } => {
+                let left_type = self.infer_hir_type(left);
+                let right_type = self.infer_hir_type(right);
+                match op {
+                    HirBinOp::Add => {
+                        if left_type == MirType::String || right_type == MirType::String {
+                            MirType::String
+                        } else if left_type == MirType::Float || right_type == MirType::Float {
+                            MirType::Float
+                        } else {
+                            MirType::Int
+                        }
+                    }
+                    HirBinOp::Sub | HirBinOp::Mul | HirBinOp::Div | HirBinOp::Mod => {
+                        if left_type == MirType::Float || right_type == MirType::Float {
+                            MirType::Float
+                        } else {
+                            MirType::Int
+                        }
+                    }
+                    HirBinOp::Eq | HirBinOp::Neq | HirBinOp::Lt | HirBinOp::Gt
+                    | HirBinOp::Le | HirBinOp::Ge | HirBinOp::And | HirBinOp::Or => MirType::Bool,
+                }
+            }
+            HirNode::Unary { op, operand } => {
+                let operand_type = self.infer_hir_type(operand);
+                match op {
+                    HirUnaryOp::Neg => {
+                        if operand_type == MirType::Float { MirType::Float } else { MirType::Int }
+                    }
+                    HirUnaryOp::Not => MirType::Bool,
+                }
+            }
+            _ => MirType::Int,
         }
     }
 
     /// Lower a full HirFunction to a MirFunction.
     pub fn lower(&mut self, hir_fn: &HirFunction) -> MirFunction {
+        // Register this function's return type (for recursive calls)
+        self.fn_ret_types.insert(hir_fn.name.clone(), lower_type(&hir_fn.ret_type));
+
         // Create entry block
         let entry = self.new_block();
         self.switch_to_block(entry);
@@ -333,7 +377,15 @@ impl MirBuilder {
                 init,
                 mutable: _,
             } => {
-                let mir_ty = lower_type(ty);
+                let mir_ty = if *ty == HirType::Infer {
+                    if let Some(init_node) = init {
+                        self.infer_hir_type(init_node)
+                    } else {
+                        MirType::Int
+                    }
+                } else {
+                    lower_type(ty)
+                };
                 self.declare_var(name, &mir_ty);
                 if let Some(init) = init {
                     let val = self.lower_node(init).unwrap_or_else(|| {
@@ -582,7 +634,11 @@ impl MirBuilder {
             }
 
             HirNode::StateDecl { name, ty, init } => {
-                let mir_ty = lower_type(ty);
+                let mir_ty = if *ty == HirType::Infer {
+                    init.as_ref().map(|n| self.infer_hir_type(n)).unwrap_or(MirType::Int)
+                } else {
+                    lower_type(ty)
+                };
                 self.declare_var(name, &mir_ty);
                 if let Some(init) = init {
                     let val = self.lower_node(init).unwrap_or_else(|| {
@@ -642,8 +698,9 @@ fn lower_unaryop(op: HirUnaryOp) -> MirUnaryOp {
 }
 
 /// Lower a complete HIR function to MIR.
-pub fn lower_function(hir_fn: &HirFunction) -> MirFunction {
+pub fn lower_function(hir_fn: &HirFunction, fn_ret_map: &FxHashMap<SmolStr, MirType>) -> MirFunction {
     let mut builder = MirBuilder::new();
+    builder.fn_ret_types = fn_ret_map.clone();
     builder.lower(hir_fn)
 }
 
@@ -668,7 +725,9 @@ mod tests {
     #[test]
     fn test_lower_simple_function() {
         let hir_fn = make_simple_fn();
-        let mir_fn = lower_function(&hir_fn);
+        let mut map = FxHashMap::default();
+        map.insert(hir_fn.name.clone(), MirType::Int);
+        let mir_fn = lower_function(&hir_fn, &map);
         assert_eq!(mir_fn.name.as_str(), "test");
         assert!(mir_fn.cfg.entry == 0);
         assert!(!mir_fn.cfg.blocks.is_empty());
@@ -688,7 +747,9 @@ mod tests {
             is_async: false,
             is_differentiable: false,
         };
-        let mir_fn = lower_function(&hir_fn);
+        let mut map = FxHashMap::default();
+        map.insert(hir_fn.name.clone(), MirType::Int);
+        let mir_fn = lower_function(&hir_fn, &map);
         assert!(mir_fn.cfg.blocks.len() >= 4); // entry, then, else, merge, plus entry body
     }
 }

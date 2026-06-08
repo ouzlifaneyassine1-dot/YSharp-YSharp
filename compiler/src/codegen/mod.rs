@@ -42,9 +42,10 @@ fn mir_to_cmir_type(ty: &MirType) -> c_backend::CMirType {
         MirType::Int => c_backend::CMirType::I64,
         MirType::Float => c_backend::CMirType::F64,
         MirType::Bool => c_backend::CMirType::Bool,
-        MirType::String => c_backend::CMirType::Ptr(Box::new(c_backend::CMirType::I8)),
-        MirType::Ptr(_) => c_backend::CMirType::Ptr(Box::new(c_backend::CMirType::I8)),
-        MirType::Tensor(_, _) => c_backend::CMirType::Ptr(Box::new(c_backend::CMirType::I8)),
+        // C backend uses int64_t for string pointers (cast from/to pointer)
+        MirType::String => c_backend::CMirType::I64,
+        MirType::Ptr(_) => c_backend::CMirType::I64,
+        MirType::Tensor(_, _) => c_backend::CMirType::I64,
         MirType::Unit => c_backend::CMirType::Void,
     }
 }
@@ -102,17 +103,28 @@ fn mir_to_cmir_inst(inst: &MirInst, vreg_map: &mut impl FnMut(MirValue) -> SmolS
                 rhs: vreg_map(*right),
             }
         }
-        MI::Call { dest, callee, args } => c_backend::CMirInst::Call {
-            dest: dest.map(|d| vreg_map(d)),
-            name: callee.to_string(),
-            args: args.iter().map(|a| vreg_map(*a)).collect(),
+        MI::Call { dest, callee, args } => {
+            let runtime_name = match callee.as_str() {
+                "NowString" | "DateString" | "TimeString"
+                | "GetUserName" | "GetHostName" | "CopyMem"
+                | "SetEnv" => format!("{}_", callee),
+                "ParseFloat" | "StrToFloat" => format!("{}_", callee),
+                "RandomRange" | "RandomRangeF" => "RandomRangeF".to_string(),
+                "RandomInt" => "RandomInt".to_string(),
+                _ => callee.to_string(),
+            };
+            c_backend::CMirInst::Call {
+                dest: dest.map(|d| vreg_map(d)),
+                name: runtime_name,
+                args: args.iter().map(|a| vreg_map(*a)).collect(),
+            }
         },
         MI::Print { dest, arg, arg_type, newline } => {
             let print_fn = match arg_type {
                 MirType::String => "_ys_print_str",
                 MirType::Int => "_ys_print_int",
                 MirType::Float => "_ys_print_float",
-                MirType::Bool => "_ys_print_float",
+                MirType::Bool => "_ys_print_int",
                 MirType::Ptr(_) => "_ys_print_str",
                 MirType::Tensor(..) => "_ys_print_str",
                 MirType::Unit => "_ys_print_int",
@@ -136,14 +148,13 @@ fn mir_to_cmir_inst(inst: &MirInst, vreg_map: &mut impl FnMut(MirValue) -> SmolS
             dest: vreg_map(*dest),
             src: SmolStr::new(format!("p{}", index)),
         },
-        MI::Unary { dest, op, operand } => c_backend::CMirInst::Binary {
+        MI::Unary { dest, op, operand } => c_backend::CMirInst::Unary {
             dest: vreg_map(*dest),
             op: match op {
                 MirUnaryOp::Neg => "-".to_string(),
                 MirUnaryOp::Not => "!".to_string(),
             },
-            lhs: vreg_map(*operand),
-            rhs: SmolStr::new("0"),
+            operand: vreg_map(*operand),
         },
         MI::VectorHint { .. } => c_backend::CMirInst::Alloca {
             dest: SmolStr::new(""),

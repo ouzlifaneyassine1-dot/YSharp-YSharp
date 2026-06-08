@@ -1,6 +1,6 @@
 Program Fibonacci {
     Function Fib(n: Int) -> Int {
-        If (n <= 1) {
+        if (n <= 1) {
             Return n
         }
         Return Fib(n - 1) + Fib(n - 2)

@@ -14,6 +14,7 @@ pub enum CMirInst {
     Load { dest: SmolStr, src: SmolStr },
     Store { dest: SmolStr, src: SmolStr },
     Binary { dest: SmolStr, op: String, lhs: SmolStr, rhs: SmolStr },
+    Unary { dest: SmolStr, op: String, operand: SmolStr },
     Call { dest: Option<SmolStr>, name: String, args: Vec<SmolStr> },
     Return(Option<SmolStr>),
 }
@@ -137,7 +138,7 @@ pub fn generate(module: &CMirModule, output: &str, link_flags: &[String], opt_le
         }
         let r = build_cmd.status().map_err(|e| format!("{}: {}", compiler_name, e))?;
         if r.success() {
-            let _ = std::fs::remove_file(&c_path);
+            // let _ = std::fs::remove_file(&c_path);
             return Ok(exe_path);
         }
     }
@@ -218,6 +219,7 @@ fn emit_c_function(func: &CMirFunction, string_literals: &[(SmolStr, SmolStr)]) 
                 CMirInst::Load { dest, .. } => { all_vars.insert(dest.clone()); }
                 CMirInst::Store { .. } => {}
                 CMirInst::Binary { dest, .. } => { all_vars.insert(dest.clone()); }
+                CMirInst::Unary { dest, .. } => { all_vars.insert(dest.clone()); }
                 CMirInst::Call { dest, .. } => {
                     if let Some(d) = dest { all_vars.insert(d.clone()); }
                 }
@@ -272,9 +274,14 @@ fn emit_c_inst(inst: &CMirInst, string_literals: &[(SmolStr, SmolStr)]) -> Strin
         CMirInst::Binary { dest, op, lhs, rhs } => {
             if op == "=" {
                 format!("{} = {};", dest, lhs)
+            } else if op == "!" {
+                format!("{} = {}{};", dest, op, lhs)
             } else {
                 format!("{} = {} {} {};", dest, lhs, op, rhs)
             }
+        }
+        CMirInst::Unary { dest, op, operand } => {
+            format!("{} = {}{};", dest, op, operand)
         }
         CMirInst::Call { dest, name, args } => {
             let a: Vec<String> = args.iter().map(|a| a.to_string()).collect();

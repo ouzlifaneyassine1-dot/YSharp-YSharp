@@ -1,6 +1,6 @@
 {
   "name": "ysharp-ide",
-  "version": "8.1.0",
+  "version": "9.0.1",
   "description": "Y# IDE — Modern code editor with AI agents",
   "main": "main.js",
   "scripts": {

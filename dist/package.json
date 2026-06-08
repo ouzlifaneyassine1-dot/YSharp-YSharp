@@ -1,6 +1,6 @@
 {
   "name": "ys-lang",
-  "version": "8.0.5",
+  "version": "9.0.1",
   "description": "Y# programming language compiler and package manager",
   "keywords": ["ys", "ys-lang", "oyster", "programming-language", "compiler"],
   "license": "MIT",
@@ -11,6 +11,8 @@
   "files": [
     "package.json",
     "install.js",
+    "install.ps1",
+    "uninstall.ps1",
     "oys.exe",
     "yo.exe"
   ],

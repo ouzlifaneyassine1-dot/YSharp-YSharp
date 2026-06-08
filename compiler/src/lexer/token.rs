@@ -72,6 +72,8 @@ pub enum Token {
     Star,
     #[token("/")]
     Slash,
+    #[token("%")]
+    Percent,
     #[token("=")]
     Eq,
     #[token("==")]

@@ -244,7 +244,17 @@ fn stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
         .or_else(|_| view_decl(arena, input))
         .or_else(|_| state_decl(arena, input))
         .or_else(|_| block_stmt(arena, input))
+        .or_else(|_| assign_stmt(arena, input))
         .or_else(|_| expr_stmt(arena, input))
+}
+
+fn assign_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
+    let (input, name) = ident(input)?;
+    let (input, _) = ws(tag("=")).parse(input)?;
+    let (input, value) = expr(arena, input)?;
+    let target = arena.alloc(AstNode::Identifier(name));
+    let (input, _) = opt(ws(tag(";"))).parse(input)?;
+    Ok((input, arena.alloc(AstNode::Assign { target, value })))
 }
 
 fn var_decl<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
@@ -267,7 +277,7 @@ fn var_decl<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> 
         Err(nom::Err::Error(_)) => (input, None),
         Err(e) => return Err(e),
     };
-    let (input, _) = ws(tag(";")).parse(input)?;
+    let (input, _) = ws(opt(tag(";"))).parse(input)?;
 
     Ok((input, arena.alloc(AstNode::VarDecl {
         name,
@@ -325,12 +335,13 @@ fn loop_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId>
 
 fn return_stmt<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
     let (input, _) = tag("Return").parse(input)?;
+    let (input, _) = skip_whitespace_and_comments(input)?;
     let (input, value) = match expr(arena, input) {
         Ok((rest, val)) => (rest, Some(val)),
         Err(nom::Err::Error(_)) => (input, None),
         Err(e) => return Err(e),
     };
-    let (input, _) = ws(tag(";")).parse(input)?;
+    let (input, _) = ws(opt(tag(";"))).parse(input)?;
 
     Ok((input, arena.alloc(AstNode::Return(value))))
 }
@@ -516,15 +527,19 @@ fn and_expr<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> 
 }
 
 fn cmp_expr<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
-    let (input, left) = add_expr(arena, input)?;
-    let (input, op) = try_cmp_op(input)?;
-    match op {
-        Some(op) => {
-            let (input, right) = add_expr(arena, input)?;
-            Ok((input, arena.alloc(AstNode::Binary { op, left, right })))
+    let (input, mut left) = add_expr(arena, input)?;
+    let mut remaining = input;
+    loop {
+        match try_cmp_op(remaining) {
+            Ok((rest, Some(op))) => {
+                let (rest, right) = add_expr(arena, rest)?;
+                left = arena.alloc(AstNode::Binary { op, left, right });
+                remaining = rest;
+            }
+            _ => break,
         }
-        None => Ok((input, left)),
     }
+    Ok((remaining, left))
 }
 
 fn try_cmp_op<'a>(input: &'a str) -> ParseResult<'a, Option<BinOp>> {
@@ -540,12 +555,18 @@ fn try_cmp_op<'a>(input: &'a str) -> ParseResult<'a, Option<BinOp>> {
 }
 
 fn add_expr<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
-    let (input, left) = mul_expr(arena, input)?;
-    let (input, op_and_right) = try_add_op(arena, input)?;
-    match op_and_right {
-        Some((op, right)) => Ok((input, arena.alloc(AstNode::Binary { op, left, right }))),
-        None => Ok((input, left)),
+    let (input, mut left) = mul_expr(arena, input)?;
+    let mut remaining = input;
+    loop {
+        match try_add_op(arena, remaining) {
+            Ok((rest, Some((op, right)))) => {
+                left = arena.alloc(AstNode::Binary { op, left, right });
+                remaining = rest;
+            }
+            _ => break,
+        }
     }
+    Ok((remaining, left))
 }
 
 fn try_add_op<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, Option<(BinOp, AstId)>> {
@@ -563,12 +584,18 @@ fn try_add_op<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, Optio
 }
 
 fn mul_expr<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, AstId> {
-    let (input, left) = unary_expr(arena, input)?;
-    let (input, op_and_right) = try_mul_op(arena, input)?;
-    match op_and_right {
-        Some((op, right)) => Ok((input, arena.alloc(AstNode::Binary { op, left, right }))),
-        None => Ok((input, left)),
+    let (input, mut left) = unary_expr(arena, input)?;
+    let mut remaining = input;
+    loop {
+        match try_mul_op(arena, remaining) {
+            Ok((rest, Some((op, right)))) => {
+                left = arena.alloc(AstNode::Binary { op, left, right });
+                remaining = rest;
+            }
+            _ => break,
+        }
     }
+    Ok((remaining, left))
 }
 
 fn try_mul_op<'a>(arena: &mut AstArena, input: &'a str) -> ParseResult<'a, Option<(BinOp, AstId)>> {

@@ -1,5 +1,5 @@
 Program TypeDemo {
-    var x = 42          // inferred Int
+    var x: Int = 42     // explicit type (optimized, unboxed)
     var y = 3.14        // inferred Float
     var name = "Y#"     // inferred String
     var flag = true     // inferred Bool
@@ -8,6 +8,6 @@ Program TypeDemo {
     PrintLine(y)
     PrintLine(name)
     
-    x: Int = 100        // explicit type (optimized, unboxed)
+    var x: Int = 100        // explicit type (optimized, unboxed)
     PrintLine(x)
 }

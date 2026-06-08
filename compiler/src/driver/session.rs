@@ -201,9 +201,23 @@ impl<'a> Session<'a> {
             .ok();
 
         // Phase 6: Lower each function to MIR
+        use rustc_hash::FxHashMap;
+        let fn_ret_map: FxHashMap<SmolStr, crate::mir::ir::MirType> = all_hir_fns
+            .iter()
+            .map(|hf| {
+                let mir_ty = match &hf.ret_type {
+                    crate::hir::HirType::Int => crate::mir::ir::MirType::Int,
+                    crate::hir::HirType::Float => crate::mir::ir::MirType::Float,
+                    crate::hir::HirType::Bool => crate::mir::ir::MirType::Bool,
+                    crate::hir::HirType::String => crate::mir::ir::MirType::String,
+                    _ => crate::mir::ir::MirType::Int,
+                };
+                (hf.name.clone(), mir_ty)
+            })
+            .collect();
         let mir_fns: Result<Vec<_>, _> = all_hir_fns
             .iter()
-            .map(|hf| Ok::<_, Box<dyn std::error::Error>>(crate::mir::lower::lower_function(hf)))
+            .map(|hf| Ok::<_, Box<dyn std::error::Error>>(crate::mir::lower::lower_function(hf, &fn_ret_map)))
             .collect();
         let mut mir_fns = mir_fns?;
 

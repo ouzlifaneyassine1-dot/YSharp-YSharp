@@ -1,8 +1,4 @@
 *.zip
-*.exe
-install.ps1
 YSharp-Y#
 ys-v8.0.0
 ys-v8.0.0-windows-x64
-!oys.exe
-!yo.exe

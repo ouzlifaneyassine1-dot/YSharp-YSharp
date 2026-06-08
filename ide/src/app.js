@@ -518,7 +518,7 @@ function initTerminal() {
   IDE.termFit.fit();
 
   // Write welcome
-  IDE.terminal.writeln('\x1b[36mY# IDE Terminal v8.1.0\x1b[0m');
+  IDE.terminal.writeln('\x1b[36mY# IDE Terminal v9.0.1\x1b[0m');
   IDE.terminal.writeln('Type commands or use `yo` for package management.\r\n');
 
   // Handle input
@@ -699,7 +699,7 @@ function initSettingsUI() {
     <div class="setting-group">
       <h3>ℹ About Y# IDE</h3>
       <div style="padding:8px;font-size:12px;color:var(--text-muted);line-height:1.6;">
-        <strong>Version:</strong> 8.1.0<br>
+        <strong>Version:</strong> 9.0.1<br>
         <strong>Compiler:</strong> oys (Y# Compiler)<br>
         <strong>Package Manager:</strong> yo<br>
         <strong>AI:</strong> Local (Ollama/Gemma 4) + Cloud (BIG PICKLE)<br>

@@ -4,7 +4,7 @@ param(
     [string]$InstallDir = "$env:LOCALAPPDATA\Programs\YSharp"
 )
 
-$Version = "8.1.0"
+$Version = "9.0.1"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Write-Status {

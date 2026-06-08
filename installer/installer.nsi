@@ -1,9 +1,9 @@
-; Y# (YSharp) v8.0.5 Installer — NSIS
-; Double-click to install, choose directory, optionally add to PATH
+; Y# (YSharp) v9.0.1 Installer — NSIS
+; All-in-one: compiler, package manager, IDE, launcher, VS Code extension
 
 Unicode True
 !define PRODUCT_NAME "Y# (YSharp)"
-!define PRODUCT_VERSION "8.0.5"
+!define PRODUCT_VERSION "9.0.1"
 !define PRODUCT_PUBLISHER "Y# Language Team"
 !define PRODUCT_WEB_SITE "https://github.com/ouzlifaneyassine1-dot/YSharp-YSharp"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\oys.exe"
@@ -19,8 +19,8 @@ SetCompressor lzma
 
 ; --- Modern UI 2 settings ---
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TITLE "Welcome to Y# (YSharp) v8.0.5 Setup"
-!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through installing Y# (YSharp) v8.0.5.$\r$\n$\r$\nY# is a modern systems language with ECS, GPU compute, autodiff, and actor model support.$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TITLE "Welcome to Y# (YSharp) v9.0.1 Setup"
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through installing Y# (YSharp) v9.0.1.$\r$\n$\r$\nIncludes: Y# compiler (oys), package manager (yo), desktop IDE with AI agents, launcher, and VS Code extension.$\r$\n$\r$\nClick Next to continue."
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_HEADERIMAGE
@@ -29,13 +29,9 @@ SetCompressor lzma
 
 ; --- Pages ---
 !insertmacro MUI_PAGE_WELCOME
-;!insertmacro MUI_PAGE_LICENSE "..\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
-!define MUI_FINISHPAGE_RUN_TEXT "Run Y# Command Prompt"
-;!define MUI_FINISHPAGE_RUN "$WINDIR\System32\cmd.exe"
-;!define MUI_FINISHPAGE_RUN_PARAMETERS "/K oys"
 !insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -46,13 +42,27 @@ SetCompressor lzma
 !insertmacro MUI_LANGUAGE "French"
 
 ; --- Component sections ---
-Section "Y# Compiler (required)" SEC_CORE
+Section "Y# Core (required)" SEC_CORE
   SectionIn RO
   SetOutPath "$INSTDIR\bin"
   File "..\dist\oys.exe"
   File "..\dist\yo.exe"
-  SetOutPath "$INSTDIR"
+  SetOutPath "$INSTDIR\launcher"
   File "..\launcher\Y# Launcher.bat"
+  File "..\launcher\Y# IDE.bat"
+  SetOutPath "$INSTDIR\scripts"
+  File "..\dist\install.ps1"
+  File "..\dist\uninstall.ps1"
+  SetOutPath "$INSTDIR\vscode"
+  File "..\dist\y-sharp-v8.0.5.vsix"
+  SetOutPath "$INSTDIR\ide\src"
+  File "..\ide\src\index.html"
+  File "..\ide\src\style.css"
+  File "..\ide\src\app.js"
+  File "..\ide\src\preload.js"
+  SetOutPath "$INSTDIR\ide"
+  File "..\ide\main.js"
+  File "..\ide\package.json"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\bin\oys.exe"
   WriteRegStr HKLM "${PRODUCT_UNINST_ROOT_KEY}\${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
@@ -72,26 +82,25 @@ SectionEnd
 
 Section "Start Menu Shortcuts" SEC_SHORTCUTS
   CreateDirectory "$SMPROGRAMS\Y# (YSharp)"
-  CreateShortCut "$SMPROGRAMS\Y# (YSharp)\Y# Command Prompt.lnk" "$WINDIR\System32\cmd.exe" '/K "$INSTDIR\bin\oys.exe"' "$INSTDIR\bin\oys.exe" 0
+  CreateShortCut "$SMPROGRAMS\Y# (YSharp)\Y# IDE.lnk" "$INSTDIR\launcher\Y# IDE.bat" "" "$INSTDIR\bin\oys.exe" 0
+  CreateShortCut "$SMPROGRAMS\Y# (YSharp)\Y# Command Prompt.lnk" "$WINDIR\System32\cmd.exe" '/K oys' "$INSTDIR\bin\oys.exe" 0
   CreateShortCut "$SMPROGRAMS\Y# (YSharp)\Uninstall Y#.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 
-Section "Associate .ys/.yse files (double-click to run)" SEC_ASSOC
-  ; Register file extensions for current user (no admin needed)
+Section "Associate .ys/.yse files" SEC_ASSOC
   WriteRegStr HKCU "Software\Classes\.ys" "" "YSharp.File"
   WriteRegStr HKCU "Software\Classes\.yse" "" "YSharp.File"
-  WriteRegStr HKCU "Software\Classes\YSharp.File\shell\open\command" "" '"$INSTDIR\Y# Launcher.bat" "%1"'
+  WriteRegStr HKCU "Software\Classes\YSharp.File\shell\open\command" "" '"$INSTDIR\launcher\Y# Launcher.bat" "%1"'
   WriteRegStr HKCU "Software\Classes\YSharp.File\DefaultIcon" "" "$INSTDIR\bin\oys.exe,0"
-  ; Notify Explorer
   System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
 SectionEnd
 
 ; --- Section descriptions ---
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CORE} "The Y# compiler (oys.exe) and optimizer (yo.exe) - required."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_PATH} "Add Y# binaries to the system PATH so you can run oys/yo from any command prompt."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SHORTCUTS} "Add shortcuts to the Start Menu."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_ASSOC} "Double-click .ys/.yse files to build and run them with Y# Launcher."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CORE} "Y# compiler (oys), package manager (yo), IDE, launcher, VS Code extension, and PowerShell scripts."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_PATH} "Add Y# binaries to system PATH so you can run oys/yo from any terminal."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SHORTCUTS} "Start Menu shortcuts for Y# IDE, Command Prompt, and Uninstall."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_ASSOC} "Double-click .ys/.yse files to build and run with Y# Launcher."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; --- Installer properties ---
@@ -107,10 +116,26 @@ Section Uninstall
   Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\bin\oys.exe"
   Delete "$INSTDIR\bin\yo.exe"
-  Delete "$INSTDIR\Y# Launcher.bat"
   RMDir "$INSTDIR\bin"
+  Delete "$INSTDIR\launcher\Y# Launcher.bat"
+  Delete "$INSTDIR\launcher\Y# IDE.bat"
+  RMDir "$INSTDIR\launcher"
+  Delete "$INSTDIR\scripts\install.ps1"
+  Delete "$INSTDIR\scripts\uninstall.ps1"
+  RMDir "$INSTDIR\scripts"
+  Delete "$INSTDIR\vscode\y-sharp-v8.0.5.vsix"
+  RMDir "$INSTDIR\vscode"
+  Delete "$INSTDIR\ide\src\index.html"
+  Delete "$INSTDIR\ide\src\style.css"
+  Delete "$INSTDIR\ide\src\app.js"
+  Delete "$INSTDIR\ide\src\preload.js"
+  RMDir "$INSTDIR\ide\src"
+  Delete "$INSTDIR\ide\main.js"
+  Delete "$INSTDIR\ide\package.json"
+  RMDir "$INSTDIR\ide"
   RMDir "$INSTDIR"
 
+  Delete "$SMPROGRAMS\Y# (YSharp)\Y# IDE.lnk"
   Delete "$SMPROGRAMS\Y# (YSharp)\Y# Command Prompt.lnk"
   Delete "$SMPROGRAMS\Y# (YSharp)\Uninstall Y#.lnk"
   RMDir "$SMPROGRAMS\Y# (YSharp)"
@@ -118,7 +143,6 @@ Section Uninstall
   Push "$INSTDIR\bin"
   Call un.RemoveFromPath
 
-  ; Remove file associations
   DeleteRegKey HKCU "Software\Classes\.ys"
   DeleteRegKey HKCU "Software\Classes\.yse"
   DeleteRegKey HKCU "Software\Classes\YSharp.File"

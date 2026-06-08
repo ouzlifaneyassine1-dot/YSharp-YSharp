@@ -323,6 +323,19 @@ pub fn infer_expr(
                 .map(|te| type_expr_to_type(te, env))
                 .unwrap_or_else(|| env.fresh_type_var());
 
+            let fn_ty = Type::Function {
+                params: param_tys.clone(),
+                ret: Box::new(ret_ty.clone()),
+            };
+
+            // Bind function name before body (supports recursion)
+            let fn_type_for_binding = FunctionType {
+                params: param_tys.clone(),
+                ret: ret_ty.clone(),
+                is_differentiable: *is_differentiable,
+            };
+            env.bind_fn(name.clone(), fn_type_for_binding);
+
             // Bind params in new scope
             for (name, ty) in param_names.iter().zip(param_tys.iter()) {
                 env.bind_var(name.clone(), ty.clone());
@@ -345,17 +358,6 @@ pub fn infer_expr(
                 }
             }
 
-            let fn_ty = Type::Function {
-                params: param_tys.clone(),
-                ret: Box::new(ret_ty.clone()),
-            };
-
-            env.bind_fn(name.clone(), FunctionType {
-                params: param_tys,
-                ret: ret_ty,
-                is_differentiable: *is_differentiable,
-            });
-
             Ok(fn_ty)
         }
 
@@ -368,7 +370,16 @@ pub fn infer_expr(
 
 fn type_expr_to_type(te: &crate::parser::ast::TypeExpr, env: &mut TypeEnv) -> Type {
     match te {
-        crate::parser::ast::TypeExpr::Named(name) => Type::Custom(name.clone(), vec![]),
+        crate::parser::ast::TypeExpr::Named(name) => {
+            match name.as_str() {
+                "Int" | "Integer" | "i64" | "i32" => Type::Int,
+                "Float" | "f64" | "f32" | "Double" => Type::Float,
+                "Bool" | "Boolean" => Type::Bool,
+                "String" | "Str" => Type::String,
+                "Void" | "Null" => Type::Void,
+                _ => Type::Custom(name.clone(), vec![]),
+            }
+        }
         crate::parser::ast::TypeExpr::Infer => env.fresh_type_var(),
         crate::parser::ast::TypeExpr::Tensor { element, dims: _ } => Type::Tensor {
             element: Box::new(type_expr_to_type(element, env)),
